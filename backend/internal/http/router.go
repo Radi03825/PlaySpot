@@ -6,9 +6,12 @@ import (
 )
 
 func NewRouter(userHandler *handler.UserHandler) *mux.Router {
-	r := mux.NewRouter()
+	router := mux.NewRouter()
 
-	r.HandleFunc("/register", userHandler.RegisterUser).Methods("POST")
+	api := router.PathPrefix("/api").Subrouter()
 
-	return r
+	api.HandleFunc("/register", userHandler.RegisterUser).Methods("POST")
+	api.HandleFunc("/login", userHandler.LoginUser).Methods("POST")
+
+	return router
 }
