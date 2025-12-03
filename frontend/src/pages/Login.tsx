@@ -2,17 +2,20 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login as loginApi } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import PasswordInput from "../components/PasswordInput";
 import "../styles/Auth.css";
-import * as React from "react";
 
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [errors, setErrors] = useState<{[key: string]: string}>({});
     const { login } = useAuth();
     const navigate = useNavigate();
 
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault();
+        setErrors({});
+
         try {
             const response = await loginApi(email, password);
             const token = response?.token;
@@ -20,14 +23,12 @@ export default function Login() {
 
             if (user?.id && token) {
                 login(token, user);
-                alert("Успешно влизане! Добре дошъл " + user.name);
                 navigate("/");
             } else {
-                alert("Грешен email или парола");
+                setErrors({ general: "Invalid email or password" });
             }
-        } catch (err) {
-            alert("Грешка при login");
-            console.error(err);
+        } catch {
+            setErrors({ general: "Invalid email or password" });
         }
     }
 
@@ -35,8 +36,32 @@ export default function Login() {
         <div className="auth-container">
             <form onSubmit={handleLogin} className="auth-form">
                 <h1>Login</h1>
-                <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required />
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required />
+
+                {errors.general && (
+                    <div className="error-message general-error">{errors.general}</div>
+                )}
+
+                <div className="form-field">
+                    <input
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        placeholder="Email"
+                        type="email"
+                        required
+                        className={errors.email ? "error-input" : ""}
+                    />
+                    {errors.email && <span className="error-message">{errors.email}</span>}
+                </div>
+
+                <PasswordInput
+                    value={password}
+                    onChange={setPassword}
+                    placeholder="Password"
+                    hasError={!!errors.password}
+                    errorMessage={errors.password}
+                    required
+                />
+
                 <button type="submit">Login</button>
             </form>
             <p className="auth-footer">

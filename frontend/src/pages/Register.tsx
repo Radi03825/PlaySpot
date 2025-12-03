@@ -1,30 +1,127 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { register } from "../services/api";
+import PasswordInput from "../components/PasswordInput";
+import "../styles/Auth.css";
 
 export default function Register() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [birthDate, setBirthDate] = useState("");
+    const [errors, setErrors] = useState<{[key: string]: string}>({});
+    const navigate = useNavigate();
 
     async function handleRegister(e: React.FormEvent) {
         e.preventDefault();
-        const res = await register(name, email, password);
+        setErrors({});
+
+        // Validate password match
+        if (password !== confirmPassword) {
+            setErrors({ confirmPassword: "Passwords do not match" });
+            return;
+        }
+
+        // Validate birthdate is not in the future
+        if (birthDate && new Date(birthDate) > new Date()) {
+            setErrors({ birthDate: "Birth date cannot be in the future" });
+            return;
+        }
+
+        const res = await register(name, email, password, birthDate);
         if (res.ok) {
-            alert("Регистрацията е успешна!");
-            setName(""); setEmail(""); setPassword("");
+            setName("");
+            setEmail("");
+            setPassword("");
+            setConfirmPassword("");
+            setBirthDate("");
+            navigate("/login");
         } else {
-            const text = await res.text();
-            alert("Грешка: " + text);
+            try {
+                const errorData = await res.json();
+                if (errorData.field) {
+                    setErrors({ [errorData.field]: errorData.error });
+                } else {
+                    setErrors({ general: errorData.error || "Registration failed" });
+                }
+            } catch {
+                // If JSON parsing fails, show generic error
+                setErrors({ general: "Registration failed. Please try again." });
+            }
         }
     }
 
     return (
-        <form onSubmit={handleRegister}>
-            <h1>Register</h1>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Name" required />
-            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required />
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required />
-            <button type="submit">Register</button>
-        </form>
+        <div className="auth-container">
+            <form onSubmit={handleRegister} className="auth-form">
+                <h1>Register</h1>
+
+                {errors.general && (
+                    <div className="error-message general-error">{errors.general}</div>
+                )}
+
+                <div className="form-field">
+                    <input
+                        value={name}
+                        onChange={e => setName(e.target.value)}
+                        placeholder="Name"
+                        required
+                        className={errors.name ? "error-input" : ""}
+                    />
+                    {errors.name && <span className="error-message">{errors.name}</span>}
+                </div>
+
+                <div className="form-field">
+                    <input
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        placeholder="Email"
+                        type="email"
+                        required
+                        className={errors.email ? "error-input" : ""}
+                    />
+                    {errors.email && <span className="error-message">{errors.email}</span>}
+                </div>
+
+                <div className="form-field">
+                    <input
+                        type="date"
+                        value={birthDate}
+                        onChange={e => setBirthDate(e.target.value)}
+                        placeholder="Birth Date"
+                        required
+                        max={new Date().toISOString().split('T')[0]}
+                        className={errors.birthDate || errors.birth_date ? "error-input" : ""}
+                    />
+                    {(errors.birthDate || errors.birth_date) && (
+                        <span className="error-message">{errors.birthDate || errors.birth_date}</span>
+                    )}
+                </div>
+
+                <PasswordInput
+                    value={password}
+                    onChange={setPassword}
+                    placeholder="Password"
+                    hasError={!!errors.password}
+                    errorMessage={errors.password}
+                    required
+                />
+
+                <PasswordInput
+                    value={confirmPassword}
+                    onChange={setConfirmPassword}
+                    placeholder="Confirm Password"
+                    hasError={!!errors.confirmPassword}
+                    errorMessage={errors.confirmPassword}
+                    required
+                />
+
+                <button type="submit">Register</button>
+            </form>
+            <p className="auth-footer">
+                Already have an account? <Link to="/login">Login here</Link>
+            </p>
+        </div>
     );
 }

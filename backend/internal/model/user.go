@@ -9,4 +9,5 @@ type User struct {
 	Password  string    `json:"-"`
 	RoleID    int64     `json:"role_id"`
 	CreatedAt time.Time `json:"created_at"`
+	BirthDate time.Time `json:"birth_date"`
 }

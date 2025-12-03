@@ -16,8 +16,8 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 }
 
 func (r *UserRepository) CreateUser(user *model.User) error {
-	query := `INSERT INTO users (name, email, password, role_id, created_at)
-	          VALUES ($1, $2, $3, $4, $5) 
+	query := `INSERT INTO users (name, email, password, role_id, created_at, birth_date)
+	          VALUES ($1, $2, $3, $4, $5, $6) 
 	          RETURNING id`
 
 	return r.db.QueryRow(query,
@@ -26,11 +26,12 @@ func (r *UserRepository) CreateUser(user *model.User) error {
 		user.Password,
 		user.RoleID,
 		time.Now(),
+		user.BirthDate,
 	).Scan(&user.ID)
 }
 
 func (r *UserRepository) GetUserByEmail(email string) (*model.User, error) {
-	query := `SELECT id, name, email, password, role_id, created_at
+	query := `SELECT id, name, email, password, role_id, created_at, birth_date
 	          FROM users
 	          WHERE email = $1`
 
@@ -44,6 +45,7 @@ func (r *UserRepository) GetUserByEmail(email string) (*model.User, error) {
 		&user.Password,
 		&user.RoleID,
 		&user.CreatedAt,
+		&user.BirthDate,
 	)
 	if err != nil {
 		return nil, err

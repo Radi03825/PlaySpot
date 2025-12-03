@@ -20,20 +20,37 @@ func NewUserService(repo *repository.UserRepository) *UserService {
 	return &UserService{repo: repo}
 }
 
-// TODO: Add error handling for duplicate emails
 // TODO: Add validation for email format and password strength
 // TODO: Send confirmation email after registration and before activating account
 func (s *UserService) RegisterUser(user dto.RegisterUserDTO) (*model.User, error) {
+	// Check if user already exists
+	existingUser, _ := s.repo.GetUserByEmail(user.Email)
+	if existingUser != nil {
+		return nil, errors.New("user with this email already exists")
+	}
+
 	hashed, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
 
+	// Parse birth date
+	birthDate, err := time.Parse("2006-01-02", user.BirthDate)
+	if err != nil {
+		return nil, errors.New("invalid birth date format, expected YYYY-MM-DD")
+	}
+
+	// Validate birth date is not in the future
+	if birthDate.After(time.Now()) {
+		return nil, errors.New("birth date cannot be in the future")
+	}
+
 	newUser := &model.User{
-		Name:     user.Name,
-		Email:    user.Email,
-		Password: string(hashed),
-		RoleID:   2, // Default role ID for regular users
+		Name:      user.Name,
+		Email:     user.Email,
+		Password:  string(hashed),
+		BirthDate: birthDate,
+		RoleID:    2, // Default role ID for regular users
 	}
 
 	err = s.repo.CreateUser(newUser)
