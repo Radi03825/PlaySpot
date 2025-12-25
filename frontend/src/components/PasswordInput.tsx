@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import "../styles/Auth.css";
 
 interface PasswordInputProps {
@@ -44,7 +46,7 @@ export default function PasswordInput({
                     }}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                    {showPassword ? "👁️" : "👁️‍🗨️"}
+                    <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
                 </span>
             </div>
             {errorMessage && <span className="error-message">{errorMessage}</span>}

@@ -99,6 +99,85 @@
     border-width: 2px;
 }
 
+.forgot-password-link {
+    text-align: right;
+    margin-top: -0.5rem;
+}
+
+.forgot-password-link a {
+    color: #007bff;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.forgot-password-link a:hover {
+    text-decoration: underline;
+}
+
+.success-message {
+    padding: 0.75rem;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    color: #155724;
+    margin-bottom: 1rem;
+}
+
+.auth-description {
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+.auth-card {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: white;
+}
+
+.auth-card h2 {
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.auth-button {
+    padding: 0.75rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.auth-button:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.auth-button:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.auth-links {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.auth-links a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}
+
 .auth-form input.error-input:focus {
     border-color: #dc3545;
     box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
@@ -148,3 +227,154 @@
 .auth-footer a:hover {
     text-decoration: underline;
 }
+
+/* Email Verification Styles */
+.resend-verification {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.resend-verification p {
+    margin: 0 0 0.5rem 0;
+    color: #856404;
+    font-size: 0.9rem;
+}
+
+.resend-button {
+    padding: 0.5rem 1rem;
+    background-color: #ffc107;
+    color: #212529;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-weight: 500;
+}
+
+.resend-button:hover:not(:disabled) {
+    background-color: #e0a800;
+}
+
+.resend-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.success-message {
+    padding: 1rem;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    color: #155724;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.success-message h3 {
+    margin: 0.5rem 0;
+    color: #155724;
+}
+
+.success-message p {
+    margin: 0.5rem 0;
+}
+
+.success-icon {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    background-color: #28a745;
+    color: white;
+    border-radius: 50%;
+    font-size: 2rem;
+    line-height: 50px;
+    margin-bottom: 0.5rem;
+}
+
+.error-icon {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 50%;
+    font-size: 2rem;
+    line-height: 50px;
+    margin-bottom: 0.5rem;
+}
+
+.info-message {
+    padding: 1rem;
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    border-radius: 4px;
+    color: #0c5460;
+    text-align: center;
+}
+
+.info-message p {
+    margin: 0.5rem 0;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.redirect-info {
+    font-size: 0.85rem;
+    color: #666;
+    font-style: italic;
+    margin-top: 1rem;
+}
+
+.info-text {
+    font-size: 0.95rem;
+}
+
+.verification-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.link-button {
+    padding: 0.5rem 1rem;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: background-color 0.3s;
+    display: inline-block;
+}
+
+.link-button:hover {
+    background-color: #0056b3;
+    text-decoration: none;
+}
+
+.link-button.secondary {
+    background-color: #6c757d;
+}
+
+.link-button.secondary:hover {
+    background-color: #545b62;
+}
+

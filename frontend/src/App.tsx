@@ -8,6 +8,9 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
 
 function App() {
 
@@ -34,6 +37,30 @@ function App() {
                       }
                   />
                   <Route
+                      path="/forgot-password"
+                      element={
+                          <PublicOnlyRoute>
+                              <ForgotPassword />
+                          </PublicOnlyRoute>
+                      }
+                  />
+                  <Route
+                      path="/reset-password"
+                      element={
+                          <PublicOnlyRoute>
+                              <ResetPassword />
+                          </PublicOnlyRoute>
+                      }
+                  />
+                  <Route
+                      path="/verify-email"
+                      element={
+                          <PublicOnlyRoute>
+                              <VerifyEmail />
+                          </PublicOnlyRoute>
+                      }
+                  />
+                  <Route
                       path="/profile"
                       element={
                           <ProtectedRoute>
@@ -48,3 +75,4 @@ function App() {
 }
 
 export default App
+
