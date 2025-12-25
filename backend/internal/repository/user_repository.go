@@ -31,7 +31,7 @@ func (r *UserRepository) CreateUser(user *model.User) error {
 }
 
 func (r *UserRepository) GetUserByEmail(email string) (*model.User, error) {
-	query := `SELECT id, name, email, password, role_id, created_at, birth_date
+	query := `SELECT id, name, email, password, role_id, created_at, birth_date, is_email_verified
 	          FROM users
 	          WHERE email = $1`
 
@@ -46,10 +46,54 @@ func (r *UserRepository) GetUserByEmail(email string) (*model.User, error) {
 		&user.RoleID,
 		&user.CreatedAt,
 		&user.BirthDate,
+		&user.IsEmailVerified,
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	return &user, nil
+}
+
+func (r *UserRepository) GetUserByID(id int64) (*model.User, error) {
+	query := `SELECT id, name, email, password, role_id, created_at, birth_date, is_email_verified
+	          FROM users
+	          WHERE id = $1`
+
+	row := r.db.QueryRow(query, id)
+
+	var user model.User
+	err := row.Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.RoleID,
+		&user.CreatedAt,
+		&user.BirthDate,
+		&user.IsEmailVerified,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *UserRepository) UpdatePassword(userID int64, hashedPassword string) error {
+	query := `UPDATE users 
+	          SET password = $1
+	          WHERE id = $2`
+
+	_, err := r.db.Exec(query, hashedPassword, userID)
+	return err
+}
+
+func (r *UserRepository) MarkEmailAsVerified(userID int64) error {
+	query := `UPDATE users 
+	          SET is_email_verified = TRUE
+	          WHERE id = $1`
+
+	_, err := r.db.Exec(query, userID)
+	return err
 }

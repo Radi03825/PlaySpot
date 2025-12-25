@@ -25,15 +25,26 @@ func main() {
 	}
 
 	userRepo := repository.NewUserRepository(db)
-	userService := service.NewUserService(userRepo)
-	userHandler := handler.NewUserHandler(userService)
+	tokenRepo := repository.NewTokenRepository(db)
+
+	// Create email service
+	emailService := service.NewEmailService()
+
+	// Create token service first as it's needed by user service
+	tokenService := service.NewTokenService(tokenRepo, userRepo)
+
+	// Create user service with token service and email service
+	userService := service.NewUserService(userRepo, tokenService, emailService)
+
+	// Create handler with both services
+	userHandler := handler.NewUserHandler(userService, tokenService)
 
 	router := http2.NewRouter(userHandler)
 
 	handlerr := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173"}, // React URL
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
-		AllowedHeaders:   []string{"Content-Type"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
 	}).Handler(router)
 
