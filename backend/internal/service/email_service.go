@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"html/template"
 	"net/smtp"
@@ -20,43 +21,8 @@ type EmailService struct {
 }
 
 func NewEmailService() *EmailService {
-	// Get template path from environment or use default
-	templatePath := os.Getenv("EMAIL_TEMPLATE_PATH")
-	if templatePath == "" {
-		// Get absolute path to templates directory
-		// Start from the current working directory and look for templates
-		workDir, err := os.Getwd()
-		if err == nil {
-			fmt.Printf("[EmailService] Current working directory: %s\n", workDir)
-
-			// Try to find templates in the backend directory structure
-			possiblePaths := []string{
-				filepath.Join(workDir, "internal", "templates"),
-				filepath.Join(workDir, "backend", "internal", "templates"),
-				filepath.Join(workDir, "..", "internal", "templates"),
-			}
-
-			for _, path := range possiblePaths {
-				fmt.Printf("[EmailService] Checking path: %s\n", path)
-				if _, err := os.Stat(path); err == nil {
-					templatePath = path
-					fmt.Printf("[EmailService] Found templates at: %s\n", templatePath)
-					break
-				}
-			}
-
-			// Fallback to relative path if none found
-			if templatePath == "" {
-				templatePath = filepath.Join("internal", "templates")
-				fmt.Printf("[EmailService] Using fallback path: %s\n", templatePath)
-			}
-		} else {
-			templatePath = filepath.Join("internal", "templates")
-			fmt.Printf("[EmailService] Error getting workdir, using fallback: %s\n", templatePath)
-		}
-	} else {
-		fmt.Printf("[EmailService] Using env template path: %s\n", templatePath)
-	}
+	// Template path is fixed relative to project root
+	templatePath := filepath.Join("backend", "internal", "templates")
 
 	return &EmailService{
 		smtpHost:     os.Getenv("SMTP_HOST"),
@@ -126,6 +92,10 @@ func (s *EmailService) sendEmail(to, subject, body string) error {
 		return nil
 	}
 
+	fmt.Printf("[EMAIL] Attempting to send email to: %s\n", to)
+	fmt.Printf("[EMAIL] SMTP Server: %s:%s\n", s.smtpHost, s.smtpPort)
+	fmt.Printf("[EMAIL] Username: %s\n", s.smtpUsername)
+
 	from := s.fromEmail
 	if s.fromName != "" {
 		from = fmt.Sprintf("%s <%s>", s.fromName, s.fromEmail)
@@ -142,14 +112,182 @@ func (s *EmailService) sendEmail(to, subject, body string) error {
 			body + "\r\n",
 	)
 
-	// Set up authentication
+	// Try sending with STARTTLS first (port 587)
+	if s.smtpPort == "587" {
+		fmt.Println("[EMAIL] Using STARTTLS method (port 587)")
+		err := s.sendWithSTARTTLS(to, message)
+		if err == nil {
+			fmt.Println("[EMAIL] ✓ Email sent successfully with STARTTLS")
+			return nil
+		}
+		fmt.Printf("[EMAIL] ✗ STARTTLS failed: %v\n", err)
+		fmt.Println("[EMAIL] Falling back to direct TLS...")
+	}
+
+	// Try direct TLS connection (port 465 or as fallback for 587)
+	fmt.Println("[EMAIL] Using direct TLS method")
+	err := s.sendWithDirectTLS(to, message)
+	if err == nil {
+		fmt.Println("[EMAIL] ✓ Email sent successfully with direct TLS")
+		return nil
+	}
+	fmt.Printf("[EMAIL] ✗ Direct TLS failed: %v\n", err)
+
+	// Last resort: try plain SMTP with basic auth (not recommended)
+	if s.smtpPort == "25" {
+		fmt.Println("[EMAIL] Using plain SMTP method (port 25)")
+		err = s.sendPlainSMTP(to, message)
+		if err == nil {
+			fmt.Println("[EMAIL] ✓ Email sent successfully with plain SMTP")
+			return nil
+		}
+		fmt.Printf("[EMAIL] ✗ Plain SMTP failed: %v\n", err)
+	}
+
+	return fmt.Errorf("all email sending methods failed, last error: %w", err)
+}
+
+func (s *EmailService) sendWithSTARTTLS(to string, message []byte) error {
+	addr := fmt.Sprintf("%s:%s", s.smtpHost, s.smtpPort)
+
+	// Connect to the SMTP server
+	client, err := smtp.Dial(addr)
+	if err != nil {
+		return fmt.Errorf("failed to connect: %w", err)
+	}
+	defer func() {
+		if closeErr := client.Close(); closeErr != nil {
+			fmt.Printf("[EMAIL] Warning: failed to close SMTP client: %v\n", closeErr)
+		}
+	}()
+
+	// Say HELLO
+	if err = client.Hello(s.smtpHost); err != nil {
+		return fmt.Errorf("failed HELLO: %w", err)
+	}
+
+	// Start TLS if available (STARTTLS)
+	if ok, _ := client.Extension("STARTTLS"); ok {
+		tlsConfig := &tls.Config{
+			ServerName:         s.smtpHost,
+			InsecureSkipVerify: false,
+		}
+		if err = client.StartTLS(tlsConfig); err != nil {
+			return fmt.Errorf("failed to start TLS: %w", err)
+		}
+	} else {
+		return fmt.Errorf("server does not support STARTTLS")
+	}
+
+	// Authenticate
+	auth := smtp.PlainAuth("", s.smtpUsername, s.smtpPassword, s.smtpHost)
+	if err = client.Auth(auth); err != nil {
+		return fmt.Errorf("failed to authenticate: %w", err)
+	}
+
+	// Set sender
+	if err = client.Mail(s.fromEmail); err != nil {
+		return fmt.Errorf("failed to set sender: %w", err)
+	}
+
+	// Set recipient
+	if err = client.Rcpt(to); err != nil {
+		return fmt.Errorf("failed to set recipient: %w", err)
+	}
+
+	// Send message body
+	w, err := client.Data()
+	if err != nil {
+		return fmt.Errorf("failed to open data writer: %w", err)
+	}
+
+	_, err = w.Write(message)
+	if err != nil {
+		return fmt.Errorf("failed to write message: %w", err)
+	}
+
+	err = w.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close data writer: %w", err)
+	}
+
+	// Send QUIT command
+	if err = client.Quit(); err != nil {
+		return fmt.Errorf("failed to quit: %w", err)
+	}
+
+	return nil
+}
+
+func (s *EmailService) sendWithDirectTLS(to string, message []byte) error {
+	addr := fmt.Sprintf("%s:%s", s.smtpHost, s.smtpPort)
+
+	// Create TLS configuration
+	tlsConfig := &tls.Config{
+		ServerName:         s.smtpHost,
+		InsecureSkipVerify: false,
+	}
+
+	// Connect with TLS directly
+	conn, err := tls.Dial("tcp", addr, tlsConfig)
+	if err != nil {
+		return fmt.Errorf("failed to connect with TLS: %w", err)
+	}
+	defer conn.Close()
+
+	client, err := smtp.NewClient(conn, s.smtpHost)
+	if err != nil {
+		return fmt.Errorf("failed to create SMTP client: %w", err)
+	}
+	defer client.Close()
+
+	// Authenticate
+	auth := smtp.PlainAuth("", s.smtpUsername, s.smtpPassword, s.smtpHost)
+	if err = client.Auth(auth); err != nil {
+		return fmt.Errorf("failed to authenticate: %w", err)
+	}
+
+	// Set sender
+	if err = client.Mail(s.fromEmail); err != nil {
+		return fmt.Errorf("failed to set sender: %w", err)
+	}
+
+	// Set recipient
+	if err = client.Rcpt(to); err != nil {
+		return fmt.Errorf("failed to set recipient: %w", err)
+	}
+
+	// Send message body
+	w, err := client.Data()
+	if err != nil {
+		return fmt.Errorf("failed to open data writer: %w", err)
+	}
+
+	_, err = w.Write(message)
+	if err != nil {
+		return fmt.Errorf("failed to write message: %w", err)
+	}
+
+	err = w.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close data writer: %w", err)
+	}
+
+	// Send QUIT command
+	if err = client.Quit(); err != nil {
+		return fmt.Errorf("failed to quit: %w", err)
+	}
+
+	return nil
+}
+
+func (s *EmailService) sendPlainSMTP(to string, message []byte) error {
+	addr := fmt.Sprintf("%s:%s", s.smtpHost, s.smtpPort)
 	auth := smtp.PlainAuth("", s.smtpUsername, s.smtpPassword, s.smtpHost)
 
-	// Send email
-	addr := fmt.Sprintf("%s:%s", s.smtpHost, s.smtpPort)
 	err := smtp.SendMail(addr, auth, s.fromEmail, []string{to}, message)
 	if err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
+		return fmt.Errorf("failed to send: %w", err)
 	}
 
 	return nil

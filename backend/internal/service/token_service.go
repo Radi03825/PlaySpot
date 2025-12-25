@@ -266,9 +266,26 @@ func (s *TokenService) GenerateEmailVerificationToken(userID int64) (string, err
 
 // ValidateEmailVerificationToken validates an email verification token and activates the account
 func (s *TokenService) ValidateEmailVerificationToken(token string) (*model.User, error) {
-	vToken, err := s.tokenRepo.GetTokenByValue(token, model.TokenTypeEmailVerification)
+	// First, try to get the token even if it's used (for already verified check)
+	vToken, err := s.tokenRepo.GetTokenByValueIncludingUsed(token, model.TokenTypeEmailVerification)
 	if err != nil {
 		return nil, errors.New("invalid or expired verification token")
+	}
+
+	// Get user first to check if already verified
+	user, err := s.userRepo.GetUserByID(vToken.UserID)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	// Check if user is already verified
+	if user.IsEmailVerified {
+		return user, errors.New("account already activated")
+	}
+
+	// Check if token was already used or is expired
+	if vToken.Used {
+		return nil, errors.New("verification token has already been used")
 	}
 
 	// Mark email as verified
@@ -280,7 +297,8 @@ func (s *TokenService) ValidateEmailVerificationToken(token string) (*model.User
 	// Mark token as used
 	_ = s.tokenRepo.MarkTokenAsUsed(vToken.ID)
 
-	user, err := s.userRepo.GetUserByID(vToken.UserID)
+	// Get updated user
+	user, err = s.userRepo.GetUserByID(vToken.UserID)
 	if err != nil {
 		return nil, errors.New("user not found")
 	}

@@ -59,6 +59,34 @@ func (r *TokenRepository) GetTokenByValue(tokenValue string, tokenType model.Tok
 	return &token, nil
 }
 
+// GetTokenByValueIncludingUsed retrieves a token by its value and type, even if it's already used
+// This is useful for checking if a user is already verified
+func (r *TokenRepository) GetTokenByValueIncludingUsed(tokenValue string, tokenType model.TokenType) (*model.Token, error) {
+	query := `SELECT id, user_id, token, token_type, expires_at, created_at, used, revoked, user_agent
+	          FROM tokens
+	          WHERE token = $1 AND token_type = $2 AND revoked = FALSE AND expires_at > NOW()`
+
+	row := r.db.QueryRow(query, tokenValue, tokenType)
+
+	var token model.Token
+	err := row.Scan(
+		&token.ID,
+		&token.UserID,
+		&token.Token,
+		&token.TokenType,
+		&token.ExpiresAt,
+		&token.CreatedAt,
+		&token.Used,
+		&token.Revoked,
+		&token.UserAgent,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &token, nil
+}
+
 // GetTokenByUserIDAndAgent retrieves an active refresh token for a specific user and device
 func (r *TokenRepository) GetTokenByUserIDAndAgent(userID int64, userAgent string, tokenType model.TokenType) (*model.Token, error) {
 	query := `SELECT id, user_id, token, token_type, expires_at, created_at, used, revoked, user_agent

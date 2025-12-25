@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/Radi03825/PlaySpot/internal/handler"
 	http2 "github.com/Radi03825/PlaySpot/internal/http"
@@ -14,9 +16,18 @@ import (
 )
 
 func main() {
+	// Try to load .env from multiple locations
 	err := godotenv.Load()
 	if err != nil {
-		panic("Error loading .env file")
+		// Try loading from parent directory (if running from backend/)
+		err = godotenv.Load(filepath.Join("..", ".env"))
+		if err != nil {
+			// Try loading from project root (if running from anywhere else)
+			err = godotenv.Load(filepath.Join("..", "..", ".env"))
+			if err != nil {
+				fmt.Println("Warning: Could not load .env file, using environment variables")
+			}
+		}
 	}
 
 	db, err := repository.ConnectDatabase()

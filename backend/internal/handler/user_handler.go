@@ -324,6 +324,18 @@ func (u *UserHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	user, err := u.service.VerifyEmail(token)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
+
+		// Check if account is already activated
+		if strings.Contains(err.Error(), "already activated") {
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"message":          "Your account is already activated! You can login now.",
+				"already_verified": true,
+				"user":             user,
+			})
+			return
+		}
+
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(ErrorResponse{Error: err.Error()})
 		return
