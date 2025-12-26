@@ -145,3 +145,84 @@ export async function resendVerificationEmail(email: string) {
     return data;
 }
 
+// Sport Complexes API
+export async function getAllSportComplexes() {
+    const response = await fetch(`${API_URL}/sport-complexes`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch sport complexes");
+    }
+
+    return data;
+}
+
+export async function getSportComplexById(id: number) {
+    const response = await fetch(`${API_URL}/sport-complexes/${id}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch sport complex");
+    }
+
+    return data;
+}
+
+export async function getFacilitiesByComplexId(id: number) {
+    const response = await fetch(`${API_URL}/sport-complexes/${id}/facilities`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch facilities");
+    }
+
+    return data;
+}
+
+// Facilities API
+export async function getAllFacilities() {
+    const response = await fetch(`${API_URL}/facilities`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch facilities");
+    }
+
+    return data;
+}
+
+export async function getFacilityById(id: number) {
+    const response = await fetch(`${API_URL}/facilities/${id}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch facility");
+    }
+
+    return data;
+}

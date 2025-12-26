@@ -17,6 +17,12 @@ export default function Navbar() {
                 PlaySpot
             </Link>
             <div className="navbar-links">
+                <Link to="/sport-complexes" className="navbar-link">
+                    Sport Complexes
+                </Link>
+                <Link to="/facilities" className="navbar-link">
+                    Facilities
+                </Link>
                 {isAuthenticated ? (
                     <>
                         <span className="navbar-user">Welcome, {user?.name}</span>

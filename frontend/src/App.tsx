@@ -11,6 +11,10 @@ import Profile from "./pages/Profile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
+import SportComplexes from "./pages/SportComplexes";
+import SportComplexDetails from "./pages/SportComplexDetails";
+import Facilities from "./pages/Facilities";
+import FacilityDetails from "./pages/FacilityDetails";
 
 function App() {
 
@@ -68,6 +72,10 @@ function App() {
                           </ProtectedRoute>
                       }
                   />
+                  <Route path="/sport-complexes" element={<SportComplexes />} />
+                  <Route path="/sport-complexes/:id" element={<SportComplexDetails />} />
+                  <Route path="/facilities" element={<Facilities />} />
+                  <Route path="/facilities/:id" element={<FacilityDetails />} />
               </Routes>
           </Router>
       </AuthProvider>

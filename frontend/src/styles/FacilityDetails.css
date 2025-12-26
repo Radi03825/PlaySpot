@@ -1,0 +1,290 @@
+/* Facility Details Page Styles */
+.facility-details-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.facility-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.facility-hero h1 {
+    font-size: 2.5rem;
+    margin: 0;
+}
+
+.facility-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+.facility-main-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.info-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+}
+
+.info-card h3 {
+    margin-top: 0;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.info-card p {
+    line-height: 1.6;
+    color: #555;
+    margin: 0;
+}
+
+.facility-specs {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.spec-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.spec-label {
+    font-size: 0.9rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.spec-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.facility-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.booking-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    position: sticky;
+    top: 2rem;
+}
+
+.booking-card h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.booking-info {
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.book-btn {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.book-btn:hover {
+    opacity: 0.9;
+}
+
+.loading,
+.error {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.2rem;
+    color: #666;
+}
+
+.error {
+    color: #e74c3c;
+}
+
+/* Responsive Design */
+@media (max-width: 968px) {
+    .facility-content {
+        grid-template-columns: 1fr;
+    }
+
+    .booking-card {
+        position: static;
+    }
+
+    .facility-hero h1 {
+        font-size: 2rem;
+    }
+}
+/* Sport Complexes Page Styles */
+.sport-complexes-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.sport-complexes-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.sport-complexes-header h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.sport-complexes-header p {
+    font-size: 1.1rem;
+    color: #666;
+}
+
+.sport-complexes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+.complex-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.complex-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.complex-card-header {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.complex-card-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.verified-badge {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.complex-card-body {
+    padding: 1.5rem;
+    flex-grow: 1;
+}
+
+.complex-location {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+}
+
+.complex-address {
+    color: #666;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+
+.complex-description {
+    color: #555;
+    line-height: 1.6;
+    margin-top: 1rem;
+}
+
+.complex-card-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.view-details-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.view-details-btn:hover {
+    opacity: 0.9;
+}
+
+.loading,
+.error,
+.no-data {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.2rem;
+    color: #666;
+}
+
+.error {
+    color: #e74c3c;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sport-complexes-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sport-complexes-header h1 {
+        font-size: 2rem;
+    }
+}
+
