@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func NewRouter(userHandler *handler.UserHandler) *mux.Router {
+func NewRouter(userHandler *handler.UserHandler, sportComplexHandler *handler.SportComplexHandler, facilityHandler *handler.FacilityHandler) *mux.Router {
 	router := mux.NewRouter()
 
 	api := router.PathPrefix("/api").Subrouter()
@@ -19,6 +19,15 @@ func NewRouter(userHandler *handler.UserHandler) *mux.Router {
 	api.HandleFunc("/refresh-token", userHandler.RefreshToken).Methods("POST")
 	api.HandleFunc("/verify-email", userHandler.VerifyEmail).Methods("GET")
 	api.HandleFunc("/resend-verification", userHandler.ResendVerificationEmail).Methods("POST")
+
+	// Sport Complex routes (public)
+	api.HandleFunc("/sport-complexes", sportComplexHandler.GetAllSportComplexes).Methods("GET")
+	api.HandleFunc("/sport-complexes/{id}", sportComplexHandler.GetSportComplexByID).Methods("GET")
+	api.HandleFunc("/sport-complexes/{id}/facilities", sportComplexHandler.GetFacilitiesByComplexID).Methods("GET")
+
+	// Facility routes (public)
+	api.HandleFunc("/facilities", facilityHandler.GetAllFacilities).Methods("GET")
+	api.HandleFunc("/facilities/{id}", facilityHandler.GetFacilityByID).Methods("GET")
 
 	// Protected routes
 	protected := api.PathPrefix("").Subrouter()

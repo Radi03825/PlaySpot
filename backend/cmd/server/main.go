@@ -30,13 +30,15 @@ func main() {
 		}
 	}
 
-	db, err := repository.ConnectDatabase()
+	db, err := repository.ConnectDatabase(true, true)
 	if err != nil {
 		panic("Failed to connect to database: " + err.Error())
 	}
 
 	userRepo := repository.NewUserRepository(db)
 	tokenRepo := repository.NewTokenRepository(db)
+	sportComplexRepo := repository.NewSportComplexRepository(db)
+	facilityRepo := repository.NewFacilityRepository(db)
 
 	// Create email service
 	emailService := service.NewEmailService()
@@ -47,10 +49,16 @@ func main() {
 	// Create user service with token service and email service
 	userService := service.NewUserService(userRepo, tokenService, emailService)
 
-	// Create handler with both services
-	userHandler := handler.NewUserHandler(userService, tokenService)
+	// Create sport complex and facility services
+	sportComplexService := service.NewSportComplexService(sportComplexRepo)
+	facilityService := service.NewFacilityService(facilityRepo)
 
-	router := http2.NewRouter(userHandler)
+	// Create handlers
+	userHandler := handler.NewUserHandler(userService, tokenService)
+	sportComplexHandler := handler.NewSportComplexHandler(sportComplexService)
+	facilityHandler := handler.NewFacilityHandler(facilityService)
+
+	router := http2.NewRouter(userHandler, sportComplexHandler, facilityHandler)
 
 	handlerr := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173"}, // React URL
