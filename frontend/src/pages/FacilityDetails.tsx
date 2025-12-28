@@ -14,23 +14,37 @@ export default function FacilityDetailsPage() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        if (id) {
-            fetchFacilityDetails(parseInt(id));
-        }
-    }, [id]);
+        let isMounted = true;
 
-    const fetchFacilityDetails = async (facilityId: number) => {
-        try {
-            setLoading(true);
-            const data = await getFacilityById(facilityId);
-            setFacility(data);
-        } catch (err: unknown) {
-            const errorMessage = err instanceof Error ? err.message : "Failed to load facility details";
-            setError(errorMessage);
-        } finally {
-            setLoading(false);
-        }
-    };
+        const fetchData = async () => {
+            if (!id) return;
+
+            try {
+                setLoading(true);
+                const data = await getFacilityById(parseInt(id));
+
+                if (isMounted) {
+                    setFacility(data);
+                    setError("");
+                }
+            } catch (err: unknown) {
+                if (isMounted) {
+                    const errorMessage = err instanceof Error ? err.message : "Failed to load facility details";
+                    setError(errorMessage);
+                }
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchData();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [id]);
 
     const handleBookNow = () => {
         if (!isAuthenticated) {

@@ -25,6 +25,14 @@ export default function Navbar() {
                 </Link>
                 {isAuthenticated ? (
                     <>
+                        {user?.role_id === 1 && (
+                            <Link to="/admin" className="navbar-link admin">
+                                Admin Panel
+                            </Link>
+                        )}
+                        <Link to="/manage-facilities" className="navbar-link manage">
+                            Manage Facilities
+                        </Link>
                         <span className="navbar-user">Welcome, {user?.name}</span>
                         <Link to="/profile" className="navbar-link profile">
                             Profile

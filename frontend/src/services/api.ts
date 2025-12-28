@@ -226,3 +226,199 @@ export async function getFacilityById(id: number) {
 
     return data;
 }
+
+export async function createSportComplex(complexData: {
+    name: string;
+    address: string;
+    city: string;
+    description: string;
+    facilities?: Array<{
+        name: string;
+        category_id: number;
+        surface_id: number;
+        environment_id: number;
+        description: string;
+        capacity: number;
+    }>;
+}) {
+    return authenticatedFetch("/sport-complexes", {
+        method: "POST",
+        body: JSON.stringify(complexData),
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to create sport complex");
+        }
+        return data;
+    });
+}
+
+export async function getMySportComplexes() {
+    return authenticatedFetch("/sport-complexes/my", {
+        method: "GET",
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to fetch sport complexes");
+        }
+        return data;
+    });
+}
+
+export async function createFacility(facilityData: {
+    name: string;
+    sport_complex_id?: number | null;
+    category_id: number;
+    surface_id: number;
+    environment_id: number;
+    description: string;
+    capacity: number;
+}) {
+    return authenticatedFetch("/facilities", {
+        method: "POST",
+        body: JSON.stringify(facilityData),
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to create facility");
+        }
+        return data;
+    });
+}
+
+export async function getCategories() {
+    const response = await fetch(`${API_URL}/facilities/metadata/categories`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch categories");
+    }
+
+    return data;
+}
+
+export async function getSurfaces() {
+    const response = await fetch(`${API_URL}/facilities/metadata/surfaces`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch surfaces");
+    }
+
+    return data;
+}
+
+export async function getEnvironments() {
+    const response = await fetch(`${API_URL}/facilities/metadata/environments`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch environments");
+    }
+
+    return data;
+}
+
+// Get user's own facilities
+export async function getMyFacilities() {
+    return authenticatedFetch("/facilities/my", {
+        method: "GET",
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to fetch facilities");
+        }
+        return data;
+    });
+}
+
+// Admin endpoints
+export async function getPendingFacilities() {
+    return authenticatedFetch("/admin/facilities/pending", {
+        method: "GET",
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to fetch pending facilities");
+        }
+        return data;
+    });
+}
+
+export async function getPendingSportComplexes() {
+    return authenticatedFetch("/admin/sport-complexes/pending", {
+        method: "GET",
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to fetch pending sport complexes");
+        }
+        return data;
+    });
+}
+
+export async function verifyFacility(facilityId: number) {
+    return authenticatedFetch(`/admin/facilities/${facilityId}/verify`, {
+        method: "POST",
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to verify facility");
+        }
+        return data;
+    });
+}
+
+export async function verifySportComplex(complexId: number) {
+    return authenticatedFetch(`/admin/sport-complexes/${complexId}/verify`, {
+        method: "POST",
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to verify sport complex");
+        }
+        return data;
+    });
+}
+
+export async function toggleFacilityStatus(facilityId: number, isActive: boolean) {
+    return authenticatedFetch(`/admin/facilities/${facilityId}/toggle-status`, {
+        method: "POST",
+        body: JSON.stringify({ is_active: isActive }),
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to toggle facility status");
+        }
+        return data;
+    });
+}
+
+export async function toggleComplexStatus(complexId: number, isActive: boolean) {
+    return authenticatedFetch(`/admin/sport-complexes/${complexId}/toggle-status`, {
+        method: "POST",
+        body: JSON.stringify({ is_active: isActive }),
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to toggle complex status");
+        }
+        return data;
+    });
+}
+

@@ -1,4 +1,5 @@
 import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 import "../styles/Home.css";
 
 export default function Home() {
@@ -25,6 +26,16 @@ export default function Home() {
                     </p>
                 )}
             </div>
+
+            {isAuthenticated && (
+                <div className="manager-cta">
+                    <h2>Do you own a sports facility?</h2>
+                    <p>Register your sport complex or facility and reach more customers!</p>
+                    <Link to="/manage-facilities" className="cta-button">
+                        Become a Facility Manager
+                    </Link>
+                </div>
+            )}
         </div>
     );
 }

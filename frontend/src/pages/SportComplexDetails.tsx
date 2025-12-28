@@ -13,32 +13,43 @@ export default function SportComplexDetails() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        if (id) {
-            fetchComplexDetails(parseInt(id));
-            fetchFacilities(parseInt(id));
-        }
+        let isMounted = true;
+
+        const fetchData = async () => {
+            if (!id) return;
+
+            try {
+                setLoading(true);
+                const complexId = parseInt(id);
+
+                const [complexData, facilitiesData] = await Promise.all([
+                    getSportComplexById(complexId),
+                    getFacilitiesByComplexId(complexId)
+                ]);
+
+                if (isMounted) {
+                    setComplex(complexData);
+                    setFacilities(facilitiesData || []);
+                    setError("");
+                }
+            } catch (err: unknown) {
+                if (isMounted) {
+                    const errorMessage = err instanceof Error ? err.message : "Failed to load sport complex details";
+                    setError(errorMessage);
+                }
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchData();
+
+        return () => {
+            isMounted = false;
+        };
     }, [id]);
-
-    const fetchComplexDetails = async (complexId: number) => {
-        try {
-            const data = await getSportComplexById(complexId);
-            setComplex(data);
-        } catch (err: any) {
-            setError(err.message || "Failed to load sport complex details");
-        }
-    };
-
-    const fetchFacilities = async (complexId: number) => {
-        try {
-            setLoading(true);
-            const data = await getFacilitiesByComplexId(complexId);
-            setFacilities(data || []);
-        } catch (err: any) {
-            setError(err.message || "Failed to load facilities");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     if (loading) {
         return (
