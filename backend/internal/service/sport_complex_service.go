@@ -9,12 +9,14 @@ import (
 type SportComplexService struct {
 	repo         *repository.SportComplexRepository
 	facilityRepo *repository.FacilityRepository
+	userRepo     *repository.UserRepository
 }
 
-func NewSportComplexService(repo *repository.SportComplexRepository, facilityRepo *repository.FacilityRepository) *SportComplexService {
+func NewSportComplexService(repo *repository.SportComplexRepository, facilityRepo *repository.FacilityRepository, userRepo *repository.UserRepository) *SportComplexService {
 	return &SportComplexService{
 		repo:         repo,
 		facilityRepo: facilityRepo,
+		userRepo:     userRepo,
 	}
 }
 
@@ -66,7 +68,29 @@ func (s *SportComplexService) GetPendingComplexes() ([]model.SportComplex, error
 }
 
 func (s *SportComplexService) VerifyComplex(id int64) error {
-	return s.repo.VerifyComplex(id)
+	managerID, err := s.repo.VerifyComplex(id)
+	if err != nil {
+		return err
+	}
+
+	// Upgrade user to manager role if they have verified facilities
+	if managerID != nil {
+		// Get Manager role ID from database
+		managerRoleID, err := s.userRepo.GetRoleIDByName("Manager")
+		if err != nil {
+			// Log error but don't fail the verification
+			return nil
+		}
+
+		err = s.userRepo.UpdateUserRole(*managerID, managerRoleID)
+		if err != nil {
+			// Log error but don't fail the verification
+			// The complex is already verified at this point
+			return nil
+		}
+	}
+
+	return nil
 }
 
 func (s *SportComplexService) ToggleComplexStatus(id int64, isActive bool) error {

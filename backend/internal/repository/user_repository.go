@@ -97,3 +97,24 @@ func (r *UserRepository) MarkEmailAsVerified(userID int64) error {
 	_, err := r.db.Exec(query, userID)
 	return err
 }
+
+func (r *UserRepository) UpdateUserRole(userID int64, roleID int64) error {
+	query := `UPDATE users 
+	          SET role_id = $1
+	          WHERE id = $2`
+
+	_, err := r.db.Exec(query, roleID, userID)
+	return err
+}
+
+func (r *UserRepository) GetRoleIDByName(roleName string) (int64, error) {
+	query := `SELECT id FROM roles WHERE name = $1`
+
+	var roleID int64
+	err := r.db.QueryRow(query, roleName).Scan(&roleID)
+	if err != nil {
+		return 0, err
+	}
+
+	return roleID, nil
+}

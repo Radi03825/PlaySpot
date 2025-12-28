@@ -19,15 +19,17 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	api.HandleFunc("/verify-email", userHandler.VerifyEmail).Methods("GET")
 	api.HandleFunc("/resend-verification", userHandler.ResendVerificationEmail).Methods("POST")
 
-	// Public metadata and browsing routes
+	// Public metadata routes
 	api.HandleFunc("/facilities/metadata/categories", facilityHandler.GetCategories).Methods("GET")
 	api.HandleFunc("/facilities/metadata/surfaces", facilityHandler.GetSurfaces).Methods("GET")
 	api.HandleFunc("/facilities/metadata/environments", facilityHandler.GetEnvironments).Methods("GET")
+
+	// Public browsing routes (register GET routes first)
 	api.HandleFunc("/facilities", facilityHandler.GetAllFacilities).Methods("GET")
-	api.HandleFunc("/facilities/{id}", facilityHandler.GetFacilityByID).Methods("GET")
+	api.HandleFunc("/facilities/{id:[0-9]+}", facilityHandler.GetFacilityByID).Methods("GET")
 	api.HandleFunc("/sport-complexes", sportComplexHandler.GetAllSportComplexes).Methods("GET")
-	api.HandleFunc("/sport-complexes/{id}", sportComplexHandler.GetSportComplexByID).Methods("GET")
-	api.HandleFunc("/sport-complexes/{id}/facilities", facilityHandler.GetFacilitiesByComplexID).Methods("GET")
+	api.HandleFunc("/sport-complexes/{id:[0-9]+}", sportComplexHandler.GetSportComplexByID).Methods("GET")
+	api.HandleFunc("/sport-complexes/{id:[0-9]+}/facilities", facilityHandler.GetFacilitiesByComplexID).Methods("GET")
 
 	// Protected routes (require authentication)
 	protected := api.PathPrefix("").Subrouter()
@@ -41,8 +43,8 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 
 	// Manager routes - manage own facilities/complexes
 	protected.HandleFunc("/sport-complexes/my", sportComplexHandler.GetMyComplexes).Methods("GET")
-	protected.HandleFunc("/sport-complexes", sportComplexHandler.CreateSportComplex).Methods("POST")
 	protected.HandleFunc("/facilities/my", facilityHandler.GetMyFacilities).Methods("GET")
+	protected.HandleFunc("/sport-complexes", sportComplexHandler.CreateSportComplex).Methods("POST")
 	protected.HandleFunc("/facilities", facilityHandler.CreateFacility).Methods("POST")
 
 	// Admin routes - manage all pending items

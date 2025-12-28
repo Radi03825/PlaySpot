@@ -59,6 +59,10 @@ export async function refreshAccessToken(refreshToken: string) {
 export async function authenticatedFetch(url: string, options: RequestInit = {}) {
     const token = localStorage.getItem("token");
 
+    if (!token) {
+        console.warn("No token found in localStorage for authenticated request to:", url);
+    }
+
     const headers = {
         "Content-Type": "application/json",
         ...(token ? { "Authorization": `Bearer ${token}` } : {}),
@@ -257,8 +261,15 @@ export async function getMySportComplexes() {
     return authenticatedFetch("/sport-complexes/my", {
         method: "GET",
     }).then(async res => {
-        const data = await res.json();
+        let data;
+        try {
+            data = await res.json();
+        } catch (e) {
+            console.error("Failed to parse response as JSON:", e);
+            throw new Error("Failed to fetch sport complexes: Invalid response");
+        }
         if (!res.ok) {
+            console.error("getMySportComplexes error:", res.status, data);
             throw new Error(data.error || "Failed to fetch sport complexes");
         }
         return data;
@@ -339,8 +350,15 @@ export async function getMyFacilities() {
     return authenticatedFetch("/facilities/my", {
         method: "GET",
     }).then(async res => {
-        const data = await res.json();
+        let data;
+        try {
+            data = await res.json();
+        } catch (e) {
+            console.error("Failed to parse response as JSON:", e);
+            throw new Error("Failed to fetch facilities: Invalid response");
+        }
         if (!res.ok) {
+            console.error("getMyFacilities error:", res.status, data);
             throw new Error(data.error || "Failed to fetch facilities");
         }
         return data;

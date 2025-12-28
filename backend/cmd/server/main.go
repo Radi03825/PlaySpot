@@ -51,8 +51,8 @@ func main() {
 	userService := service.NewUserService(userRepo, tokenService, emailService)
 
 	// Create sport complex and facility services
-	sportComplexService := service.NewSportComplexService(sportComplexRepo, facilityRepo)
-	facilityService := service.NewFacilityService(facilityRepo)
+	sportComplexService := service.NewSportComplexService(sportComplexRepo, facilityRepo, userRepo)
+	facilityService := service.NewFacilityService(facilityRepo, userRepo)
 
 	// Create handlers
 	userHandler := handler.NewUserHandler(userService, tokenService)
@@ -70,11 +70,11 @@ func main() {
 
 	port := os.Getenv("BE_PORT")
 
+	fmt.Printf("Server is running on port %s\n", port)
 	err = http.ListenAndServe(":"+port, handlerr)
 	if err != nil {
-		return
-	} else {
-		println("Server is running on port " + port)
+		fmt.Printf("Server error: %v\n", err)
+		panic(err)
 	}
 
 }

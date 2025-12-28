@@ -6,11 +6,15 @@ import (
 )
 
 type FacilityService struct {
-	repo *repository.FacilityRepository
+	repo     *repository.FacilityRepository
+	userRepo *repository.UserRepository
 }
 
-func NewFacilityService(repo *repository.FacilityRepository) *FacilityService {
-	return &FacilityService{repo: repo}
+func NewFacilityService(repo *repository.FacilityRepository, userRepo *repository.UserRepository) *FacilityService {
+	return &FacilityService{
+		repo:     repo,
+		userRepo: userRepo,
+	}
 }
 
 func (s *FacilityService) CreateFacility(name string, sportComplexID *int64, categoryID, surfaceID, environmentID int64, description string, capacity int, managerID int64) (*model.Facility, error) {
@@ -38,7 +42,29 @@ func (s *FacilityService) GetPendingFacilities() ([]model.FacilityDetails, error
 }
 
 func (s *FacilityService) VerifyFacility(id int64) error {
-	return s.repo.VerifyFacility(id)
+	managerID, err := s.repo.VerifyFacility(id)
+	if err != nil {
+		return err
+	}
+
+	// Upgrade user to manager role if they have verified facilities
+	if managerID != nil {
+		// Get Manager role ID from database
+		managerRoleID, err := s.userRepo.GetRoleIDByName("Manager")
+		if err != nil {
+			// Log error but don't fail the verification
+			return nil
+		}
+
+		err = s.userRepo.UpdateUserRole(*managerID, managerRoleID)
+		if err != nil {
+			// Log error but don't fail the verification
+			// The facility is already verified at this point
+			return nil
+		}
+	}
+
+	return nil
 }
 
 func (s *FacilityService) ToggleFacilityStatus(id int64, isActive bool) error {

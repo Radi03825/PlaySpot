@@ -239,10 +239,19 @@ func (r *FacilityRepository) GetPendingFacilities() ([]model.FacilityDetails, er
 	return facilities, nil
 }
 
-func (r *FacilityRepository) VerifyFacility(id int64) error {
+func (r *FacilityRepository) VerifyFacility(id int64) (*int64, error) {
+	// Get manager_id first
+	var managerID *int64
+	queryGet := `SELECT manager_id FROM facilities WHERE id = $1`
+	err := r.db.QueryRow(queryGet, id).Scan(&managerID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update the facility
 	query := `UPDATE facilities SET is_verified = true, is_active = true WHERE id = $1`
-	_, err := r.db.Exec(query, id)
-	return err
+	_, err = r.db.Exec(query, id)
+	return managerID, err
 }
 
 func (r *FacilityRepository) ToggleFacilityStatus(id int64, isActive bool) error {

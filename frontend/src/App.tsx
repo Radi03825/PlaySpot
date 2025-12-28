@@ -16,6 +16,7 @@ import SportComplexDetails from "./pages/SportComplexDetails";
 import Facilities from "./pages/Facilities";
 import FacilityDetails from "./pages/FacilityDetails";
 import ManageFacilities from "./pages/ManageFacilities";
+import BecomeManager from "./pages/BecomeManager";
 import AdminPanel from "./pages/AdminPanel";
 
 function App() {
@@ -68,6 +69,14 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <ManageFacilities />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/become-manager"
+                            element={
+                                <ProtectedRoute>
+                                    <BecomeManager />
                                 </ProtectedRoute>
                             }
                         />

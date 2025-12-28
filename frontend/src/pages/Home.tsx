@@ -31,9 +31,15 @@ export default function Home() {
                 <div className="manager-cta">
                     <h2>Do you own a sports facility?</h2>
                     <p>Register your sport complex or facility and reach more customers!</p>
-                    <Link to="/manage-facilities" className="cta-button">
-                        Become a Facility Manager
-                    </Link>
+                    {user?.role_id === 3 ? (
+                        <Link to="/manage-facilities" className="cta-button">
+                            Manage Your Facilities
+                        </Link>
+                    ) : (
+                        <Link to="/become-manager" className="cta-button">
+                            Become a Facility Manager
+                        </Link>
+                    )}
                 </div>
             )}
         </div>

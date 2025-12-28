@@ -9,9 +9,9 @@ import {
     getMyFacilities
 } from "../services/api";
 import type { Category, Surface, Environment, SportComplex, FacilityDetails } from "../types";
-import "../styles/ManageFacilities.css";
+import "../styles/BecomeManager.css";
 
-export default function ManageFacilities() {
+export default function BecomeManager() {
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [createType, setCreateType] = useState<"complex" | "facility">("complex");
     const [loading, setLoading] = useState(false);
@@ -160,7 +160,7 @@ export default function ManageFacilities() {
                 facilities: complexForm.facilities
             });
 
-            setSuccess("Sport complex created successfully! Waiting for admin approval.");
+            setSuccess("Sport complex created successfully! Waiting for admin approval. Once approved, you'll be upgraded to a Manager!");
             setComplexForm({
                 name: "",
                 address: "",
@@ -185,7 +185,7 @@ export default function ManageFacilities() {
 
         try {
             await createFacility(facilityForm);
-            setSuccess("Facility created successfully! Waiting for admin approval.");
+            setSuccess("Facility created successfully! Waiting for admin approval. Once approved, you'll be upgraded to a Manager!");
             setFacilityForm({
                 name: "",
                 sport_complex_id: null,
@@ -232,58 +232,106 @@ export default function ManageFacilities() {
         }
     };
 
+    const hasPendingItems = () => {
+        const pendingComplexes = mySportComplexes.filter(c => !c.is_verified);
+        const pendingFacilities = myFacilities.filter(f => !f.is_verified);
+        return pendingComplexes.length > 0 || pendingFacilities.length > 0;
+    };
+
     return (
-        <div className="manage-facilities-container">
-            <div className="manage-header">
-                <h1>Manage My Facilities</h1>
+        <div className="become-manager-container">
+            <div className="become-manager-header">
+                <h1>Become a Facility Manager</h1>
+                <p className="header-subtitle">
+                    Register your sports facilities and start earning! Once your submission is approved by our admin team,
+                    you'll be upgraded to a Manager account with full access to facility management tools.
+                </p>
+            </div>
+
+            <div className="info-section">
+                <h2>Why Become a Manager?</h2>
+                <div className="benefits-grid">
+                    <div className="benefit-card">
+                        <div className="benefit-icon">📍</div>
+                        <h3>List Your Facilities</h3>
+                        <p>Add your sports complexes and facilities to our platform</p>
+                    </div>
+                    <div className="benefit-card">
+                        <div className="benefit-icon">👥</div>
+                        <h3>Reach More Customers</h3>
+                        <p>Connect with sports enthusiasts looking for venues</p>
+                    </div>
+                    <div className="benefit-card">
+                        <div className="benefit-icon">⚙️</div>
+                        <h3>Manage Your Listings</h3>
+                        <p>Update details, availability, and pricing easily</p>
+                    </div>
+                    <div className="benefit-card">
+                        <div className="benefit-icon">📊</div>
+                        <h3>Track Performance</h3>
+                        <p>Monitor your bookings and customer engagement</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="action-section">
+                <h2>Get Started</h2>
+                <p>Submit your sport complex or facility for review. Our team will verify it within 24-48 hours.</p>
                 <button
-                    className="btn-primary"
+                    className="btn-primary btn-large"
                     onClick={openCreateModal}
                 >
-                    + Create New
+                    + Add Your First Facility
                 </button>
             </div>
 
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">{success}</div>}
 
-            {/* List of my facilities */}
-            <div className="facilities-list">
-                <h2>My Sport Complexes</h2>
-                {!mySportComplexes || mySportComplexes.length === 0 ? (
-                    <p className="empty-message">No sport complexes yet. Create one to get started!</p>
-                ) : (
-                    <div className="complexes-grid">
-                        {mySportComplexes.map(complex => (
-                            <div key={complex.id} className="complex-card">
-                                <h3>{complex.name}</h3>
-                                <p>{complex.city}, {complex.address}</p>
-                                <p>{complex.description}</p>
-                                {getStatusBadge(complex.is_verified, complex.is_active)}
-                            </div>
-                        ))}
-                    </div>
-                )}
+            {/* Pending/Waiting List */}
+            {hasPendingItems() && (
+                <div className="waiting-list-section">
+                    <h2>Your Waiting List</h2>
+                    <p className="section-description">
+                        These items are waiting for admin approval. You'll be notified once they're verified!
+                    </p>
 
-                <h2>My Standalone Facilities</h2>
-                {!myFacilities || myFacilities.filter(f => !f.sport_complex_id).length === 0 ? (
-                    <p className="empty-message">No standalone facilities yet.</p>
-                ) : (
-                    <div className="facilities-grid">
-                        {myFacilities.filter(f => !f.sport_complex_id).map(facility => (
-                            <div key={facility.id} className="facility-card">
-                                <h3>{facility.name}</h3>
-                                <p className="facility-category">{facility.category_name}</p>
-                                <p>{facility.description}</p>
-                                <p className="facility-details">
-                                    Capacity: {facility.capacity} | {facility.surface_name} | {facility.environment_name}
-                                </p>
-                                {getStatusBadge(facility.is_verified, facility.is_active)}
+                    {mySportComplexes.filter(c => !c.is_verified).length > 0 && (
+                        <>
+                            <h3>Pending Sport Complexes</h3>
+                            <div className="complexes-grid">
+                                {mySportComplexes.filter(c => !c.is_verified).map(complex => (
+                                    <div key={complex.id} className="complex-card pending-item">
+                                        <h4>{complex.name}</h4>
+                                        <p>{complex.city}, {complex.address}</p>
+                                        <p>{complex.description}</p>
+                                        {getStatusBadge(complex.is_verified, complex.is_active)}
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+                        </>
+                    )}
+
+                    {myFacilities.filter(f => !f.is_verified).length > 0 && (
+                        <>
+                            <h3>Pending Facilities</h3>
+                            <div className="facilities-grid">
+                                {myFacilities.filter(f => !f.is_verified).map(facility => (
+                                    <div key={facility.id} className="facility-card pending-item">
+                                        <h4>{facility.name}</h4>
+                                        <p className="facility-category">{facility.category_name}</p>
+                                        <p>{facility.description}</p>
+                                        <p className="facility-details">
+                                            Capacity: {facility.capacity} | {facility.surface_name} | {facility.environment_name}
+                                        </p>
+                                        {getStatusBadge(facility.is_verified, facility.is_active)}
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+            )}
 
             {/* Create Form Modal */}
             {showCreateForm && (
@@ -291,7 +339,7 @@ export default function ManageFacilities() {
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <button className="modal-close" onClick={closeCreateModal}>×</button>
 
-                        <h2>Create New</h2>
+                        <h2>Add Your Facility</h2>
 
                         {error && <div className="error-message">{error}</div>}
                         {success && <div className="success-message">{success}</div>}
@@ -323,16 +371,16 @@ export default function ManageFacilities() {
                                 />
                                 <input
                                     type="text"
-                                    placeholder="Address"
-                                    value={complexForm.address}
-                                    onChange={(e) => setComplexForm({ ...complexForm, address: e.target.value })}
+                                    placeholder="City"
+                                    value={complexForm.city}
+                                    onChange={(e) => setComplexForm({ ...complexForm, city: e.target.value })}
                                     required
                                 />
                                 <input
                                     type="text"
-                                    placeholder="City"
-                                    value={complexForm.city}
-                                    onChange={(e) => setComplexForm({ ...complexForm, city: e.target.value })}
+                                    placeholder="Address"
+                                    value={complexForm.address}
+                                    onChange={(e) => setComplexForm({ ...complexForm, address: e.target.value })}
                                     required
                                 />
                                 <textarea
@@ -342,95 +390,70 @@ export default function ManageFacilities() {
                                     required
                                 />
 
-                                <div className="facilities-section">
-                                    <div className="section-header">
-                                        <h3>Facilities</h3>
+                                <h3>Facilities</h3>
+                                {complexForm.facilities.map((facility, index) => (
+                                    <div key={index} className="facility-form-item">
+                                        <h4>Facility {index + 1}</h4>
+                                        <input
+                                            type="text"
+                                            placeholder="Facility Name"
+                                            value={facility.name}
+                                            onChange={(e) => updateFacilityInComplex(index, "name", e.target.value)}
+                                            required
+                                        />
+                                        <select
+                                            value={facility.category_id}
+                                            onChange={(e) => updateFacilityInComplex(index, "category_id", parseInt(e.target.value))}
+                                            required
+                                        >
+                                            {categories.map(cat => (
+                                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                            ))}
+                                        </select>
+                                        <select
+                                            value={facility.surface_id}
+                                            onChange={(e) => updateFacilityInComplex(index, "surface_id", parseInt(e.target.value))}
+                                            required
+                                        >
+                                            {surfaces.map(surf => (
+                                                <option key={surf.id} value={surf.id}>{surf.name}</option>
+                                            ))}
+                                        </select>
+                                        <select
+                                            value={facility.environment_id}
+                                            onChange={(e) => updateFacilityInComplex(index, "environment_id", parseInt(e.target.value))}
+                                            required
+                                        >
+                                            {environments.map(env => (
+                                                <option key={env.id} value={env.id}>{env.name}</option>
+                                            ))}
+                                        </select>
+                                        <input
+                                            type="number"
+                                            placeholder="Capacity"
+                                            value={facility.capacity}
+                                            onChange={(e) => updateFacilityInComplex(index, "capacity", parseInt(e.target.value))}
+                                            required
+                                        />
+                                        <textarea
+                                            placeholder="Facility Description"
+                                            value={facility.description}
+                                            onChange={(e) => updateFacilityInComplex(index, "description", e.target.value)}
+                                            required
+                                        />
                                         <button
                                             type="button"
-                                            className="btn-add-facility"
-                                            onClick={addFacilityToComplex}
+                                            className="btn-remove"
+                                            onClick={() => removeFacilityFromComplex(index)}
                                         >
-                                            + Add Facility
+                                            Remove Facility
                                         </button>
                                     </div>
+                                ))}
 
-                                    {complexForm.facilities.length === 0 && (
-                                        <p className="empty-message">Click "+ Add Facility" to add facilities to this complex</p>
-                                    )}
-
-                                    <div className="facilities-horizontal-list">
-                                        {complexForm.facilities.map((facility, index) => (
-                                            <div key={index} className="facility-form-card">
-                                                <button
-                                                    type="button"
-                                                    className="remove-facility-btn"
-                                                    onClick={() => removeFacilityFromComplex(index)}
-                                                >
-                                                    ×
-                                                </button>
-
-                                                <h4>Facility {index + 1}</h4>
-
-                                                <input
-                                                    type="text"
-                                                    placeholder="Facility Name"
-                                                    value={facility.name}
-                                                    onChange={(e) => updateFacilityInComplex(index, "name", e.target.value)}
-                                                    required
-                                                />
-
-                                                <select
-                                                    value={facility.category_id}
-                                                    onChange={(e) => updateFacilityInComplex(index, "category_id", parseInt(e.target.value))}
-                                                    required
-                                                >
-                                                    <option value={0}>Select Category</option>
-                                                    {categories.map(cat => (
-                                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                                    ))}
-                                                </select>
-
-                                                <select
-                                                    value={facility.surface_id}
-                                                    onChange={(e) => updateFacilityInComplex(index, "surface_id", parseInt(e.target.value))}
-                                                    required
-                                                >
-                                                    <option value={0}>Select Surface</option>
-                                                    {surfaces.map(surf => (
-                                                        <option key={surf.id} value={surf.id}>{surf.name}</option>
-                                                    ))}
-                                                </select>
-
-                                                <select
-                                                    value={facility.environment_id}
-                                                    onChange={(e) => updateFacilityInComplex(index, "environment_id", parseInt(e.target.value))}
-                                                    required
-                                                >
-                                                    <option value={0}>Select Environment</option>
-                                                    {environments.map(env => (
-                                                        <option key={env.id} value={env.id}>{env.name}</option>
-                                                    ))}
-                                                </select>
-
-                                                <textarea
-                                                    placeholder="Description"
-                                                    value={facility.description}
-                                                    onChange={(e) => updateFacilityInComplex(index, "description", e.target.value)}
-                                                    required
-                                                />
-
-                                                <input
-                                                    type="number"
-                                                    placeholder="Capacity"
-                                                    value={facility.capacity || ""}
-                                                    onChange={(e) => updateFacilityInComplex(index, "capacity", parseInt(e.target.value))}
-                                                    required
-                                                    min="1"
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                                <button type="button" className="btn-secondary" onClick={addFacilityToComplex}>
+                                    + Add Facility
+                                </button>
 
                                 <button type="submit" className="btn-primary" disabled={loading}>
                                     {loading ? "Creating..." : "Submit for Approval"}
@@ -439,7 +462,6 @@ export default function ManageFacilities() {
                         ) : (
                             <form onSubmit={handleCreateFacility} className="create-form">
                                 <h3>Facility Information</h3>
-
                                 <input
                                     type="text"
                                     placeholder="Facility Name"
@@ -447,20 +469,6 @@ export default function ManageFacilities() {
                                     onChange={(e) => setFacilityForm({ ...facilityForm, name: e.target.value })}
                                     required
                                 />
-
-                                <select
-                                    value={facilityForm.sport_complex_id || ""}
-                                    onChange={(e) => setFacilityForm({
-                                        ...facilityForm,
-                                        sport_complex_id: e.target.value ? parseInt(e.target.value) : null
-                                    })}
-                                >
-                                    <option value="">Standalone (No Complex)</option>
-                                    {mySportComplexes.filter(c => c.is_verified).map(complex => (
-                                        <option key={complex.id} value={complex.id}>{complex.name}</option>
-                                    ))}
-                                </select>
-
                                 <select
                                     value={facilityForm.category_id}
                                     onChange={(e) => setFacilityForm({ ...facilityForm, category_id: parseInt(e.target.value) })}
@@ -471,7 +479,6 @@ export default function ManageFacilities() {
                                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                                     ))}
                                 </select>
-
                                 <select
                                     value={facilityForm.surface_id}
                                     onChange={(e) => setFacilityForm({ ...facilityForm, surface_id: parseInt(e.target.value) })}
@@ -482,7 +489,6 @@ export default function ManageFacilities() {
                                         <option key={surf.id} value={surf.id}>{surf.name}</option>
                                     ))}
                                 </select>
-
                                 <select
                                     value={facilityForm.environment_id}
                                     onChange={(e) => setFacilityForm({ ...facilityForm, environment_id: parseInt(e.target.value) })}
@@ -493,21 +499,18 @@ export default function ManageFacilities() {
                                         <option key={env.id} value={env.id}>{env.name}</option>
                                     ))}
                                 </select>
-
+                                <input
+                                    type="number"
+                                    placeholder="Capacity"
+                                    value={facilityForm.capacity}
+                                    onChange={(e) => setFacilityForm({ ...facilityForm, capacity: parseInt(e.target.value) })}
+                                    required
+                                />
                                 <textarea
                                     placeholder="Description"
                                     value={facilityForm.description}
                                     onChange={(e) => setFacilityForm({ ...facilityForm, description: e.target.value })}
                                     required
-                                />
-
-                                <input
-                                    type="number"
-                                    placeholder="Capacity"
-                                    value={facilityForm.capacity || ""}
-                                    onChange={(e) => setFacilityForm({ ...facilityForm, capacity: parseInt(e.target.value) })}
-                                    required
-                                    min="1"
                                 />
 
                                 <button type="submit" className="btn-primary" disabled={loading}>

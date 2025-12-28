@@ -30,9 +30,15 @@ export default function Navbar() {
                                 Admin Panel
                             </Link>
                         )}
-                        <Link to="/manage-facilities" className="navbar-link manage">
-                            Manage Facilities
-                        </Link>
+                        {user?.role_id === 3 ? (
+                            <Link to="/manage-facilities" className="navbar-link manage">
+                                Manage Facilities
+                            </Link>
+                        ) : user?.role_id === 2 && (
+                            <Link to="/become-manager" className="navbar-link manage">
+                                Become Manager
+                            </Link>
+                        )}
                         <span className="navbar-user">Welcome, {user?.name}</span>
                         <Link to="/profile" className="navbar-link profile">
                             Profile
