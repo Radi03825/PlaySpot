@@ -6,9 +6,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func NewRouter(userHandler *handler.UserHandler, sportComplexHandler *handler.SportComplexHandler, facilityHandler *handler.FacilityHandler) *mux.Router {
+func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.FacilityHandler, sportComplexHandler *handler.SportComplexHandler) *mux.Router {
 	router := mux.NewRouter()
-
 	api := router.PathPrefix("/api").Subrouter()
 
 	// Public routes
@@ -20,22 +19,41 @@ func NewRouter(userHandler *handler.UserHandler, sportComplexHandler *handler.Sp
 	api.HandleFunc("/verify-email", userHandler.VerifyEmail).Methods("GET")
 	api.HandleFunc("/resend-verification", userHandler.ResendVerificationEmail).Methods("POST")
 
-	// Sport Complex routes (public)
-	api.HandleFunc("/sport-complexes", sportComplexHandler.GetAllSportComplexes).Methods("GET")
-	api.HandleFunc("/sport-complexes/{id}", sportComplexHandler.GetSportComplexByID).Methods("GET")
-	api.HandleFunc("/sport-complexes/{id}/facilities", sportComplexHandler.GetFacilitiesByComplexID).Methods("GET")
-
-	// Facility routes (public)
+	// Public metadata and browsing routes
+	api.HandleFunc("/facilities/metadata/categories", facilityHandler.GetCategories).Methods("GET")
+	api.HandleFunc("/facilities/metadata/surfaces", facilityHandler.GetSurfaces).Methods("GET")
+	api.HandleFunc("/facilities/metadata/environments", facilityHandler.GetEnvironments).Methods("GET")
 	api.HandleFunc("/facilities", facilityHandler.GetAllFacilities).Methods("GET")
 	api.HandleFunc("/facilities/{id}", facilityHandler.GetFacilityByID).Methods("GET")
+	api.HandleFunc("/sport-complexes", sportComplexHandler.GetAllSportComplexes).Methods("GET")
+	api.HandleFunc("/sport-complexes/{id}", sportComplexHandler.GetSportComplexByID).Methods("GET")
+	api.HandleFunc("/sport-complexes/{id}/facilities", facilityHandler.GetFacilitiesByComplexID).Methods("GET")
 
-	// Protected routes
+	// Protected routes (require authentication)
 	protected := api.PathPrefix("").Subrouter()
 	protected.Use(middleware.JWTAuthMiddleware)
+
+	// User routes
 	protected.HandleFunc("/profile", userHandler.GetProfile).Methods("GET")
 	protected.HandleFunc("/change-password", userHandler.ChangePassword).Methods("POST")
 	protected.HandleFunc("/active-devices", userHandler.GetActiveDevices).Methods("GET")
 	protected.HandleFunc("/logout-all", userHandler.LogoutAllDevices).Methods("POST")
+
+	// Manager routes - manage own facilities/complexes
+	protected.HandleFunc("/sport-complexes/my", sportComplexHandler.GetMyComplexes).Methods("GET")
+	protected.HandleFunc("/sport-complexes", sportComplexHandler.CreateSportComplex).Methods("POST")
+	protected.HandleFunc("/facilities/my", facilityHandler.GetMyFacilities).Methods("GET")
+	protected.HandleFunc("/facilities", facilityHandler.CreateFacility).Methods("POST")
+
+	// Admin routes - manage all pending items
+	adminRoutes := protected.PathPrefix("/admin").Subrouter()
+	// TODO: Add admin role check middleware here
+	adminRoutes.HandleFunc("/facilities/pending", facilityHandler.GetPendingFacilities).Methods("GET")
+	adminRoutes.HandleFunc("/facilities/{id}/verify", facilityHandler.VerifyFacility).Methods("POST")
+	adminRoutes.HandleFunc("/facilities/{id}/toggle-status", facilityHandler.ToggleFacilityStatus).Methods("POST")
+	adminRoutes.HandleFunc("/sport-complexes/pending", sportComplexHandler.GetPendingComplexes).Methods("GET")
+	adminRoutes.HandleFunc("/sport-complexes/{id}/verify", sportComplexHandler.VerifyComplex).Methods("POST")
+	adminRoutes.HandleFunc("/sport-complexes/{id}/toggle-status", sportComplexHandler.ToggleComplexStatus).Methods("POST")
 
 	return router
 }
