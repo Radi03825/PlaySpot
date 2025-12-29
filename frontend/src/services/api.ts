@@ -440,3 +440,68 @@ export async function toggleComplexStatus(complexId: number, isActive: boolean) 
     });
 }
 
+// Reservation API
+export async function getFacilityAvailability(facilityId: number, startDate?: string, endDate?: string) {
+    const params = new URLSearchParams();
+    if (startDate) params.append("start_date", startDate);
+    if (endDate) params.append("end_date", endDate);
+
+    const queryString = params.toString();
+    const url = `/facilities/${facilityId}/availability${queryString ? `?${queryString}` : ''}`;
+
+    const response = await fetch(`${API_URL}${url}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch facility availability");
+    }
+
+    return data;
+}
+
+export async function createReservation(reservationData: {
+    facility_id: number;
+    start_time: string;
+    end_time: string;
+}) {
+    return authenticatedFetch("/reservations", {
+        method: "POST",
+        body: JSON.stringify(reservationData),
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to create reservation");
+        }
+        return data;
+    });
+}
+
+export async function getMyReservations() {
+    return authenticatedFetch("/reservations/my", {
+        method: "GET",
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to fetch reservations");
+        }
+        return data;
+    });
+}
+
+export async function cancelReservation(reservationId: number) {
+    return authenticatedFetch(`/reservations/${reservationId}/cancel`, {
+        method: "POST",
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to cancel reservation");
+        }
+        return data;
+    });
+}
+

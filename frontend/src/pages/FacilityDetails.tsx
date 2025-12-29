@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getFacilityById } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import type { FacilityDetails } from "../types";
+import BookingModal from "../components/BookingModal";
 import "../styles/FacilityDetails.css";
 
 export default function FacilityDetailsPage() {
@@ -12,6 +13,7 @@ export default function FacilityDetailsPage() {
     const [facility, setFacility] = useState<FacilityDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [showBookingModal, setShowBookingModal] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -50,9 +52,12 @@ export default function FacilityDetailsPage() {
         if (!isAuthenticated) {
             navigate("/login");
         } else {
-            // TODO: Implement booking functionality
-            alert("Booking functionality coming soon!");
+            setShowBookingModal(true);
         }
+    };
+
+    const handleBookingSuccess = () => {
+        alert("Booking successful! Check your reservations in your profile.");
     };
 
     if (loading) {
@@ -140,6 +145,15 @@ export default function FacilityDetailsPage() {
                     </div>
                 </div>
             </div>
+
+            {showBookingModal && facility && (
+                <BookingModal
+                    facilityId={facility.id}
+                    facilityName={facility.name}
+                    onClose={() => setShowBookingModal(false)}
+                    onSuccess={handleBookingSuccess}
+                />
+            )}
         </div>
     );
 }

@@ -40,6 +40,7 @@ func main() {
 	sportComplexRepo := repository.NewSportComplexRepository(db)
 	facilityRepo := repository.NewFacilityRepository(db)
 	metadataRepo := repository.NewMetadataRepository(db)
+	reservationRepo := repository.NewReservationRepository(db)
 
 	// Create email service
 	emailService := service.NewEmailService()
@@ -53,13 +54,15 @@ func main() {
 	// Create sport complex and facility services
 	sportComplexService := service.NewSportComplexService(sportComplexRepo, facilityRepo, userRepo)
 	facilityService := service.NewFacilityService(facilityRepo, userRepo)
+	reservationService := service.NewReservationService(reservationRepo)
 
 	// Create handlers
 	userHandler := handler.NewUserHandler(userService, tokenService)
 	sportComplexHandler := handler.NewSportComplexHandler(sportComplexService)
 	facilityHandler := handler.NewFacilityHandler(facilityService, metadataRepo)
+	reservationHandler := handler.NewReservationHandler(reservationService)
 
-	router := http2.NewRouter(userHandler, facilityHandler, sportComplexHandler)
+	router := http2.NewRouter(userHandler, facilityHandler, sportComplexHandler, reservationHandler)
 
 	handlerr := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173"}, // React URL

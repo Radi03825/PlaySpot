@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.FacilityHandler, sportComplexHandler *handler.SportComplexHandler) *mux.Router {
+func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.FacilityHandler, sportComplexHandler *handler.SportComplexHandler, reservationHandler *handler.ReservationHandler) *mux.Router {
 	router := mux.NewRouter()
 	api := router.PathPrefix("/api").Subrouter()
 
@@ -27,6 +27,7 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	// Public browsing routes (register GET routes first)
 	api.HandleFunc("/facilities", facilityHandler.GetAllFacilities).Methods("GET")
 	api.HandleFunc("/facilities/{id:[0-9]+}", facilityHandler.GetFacilityByID).Methods("GET")
+	api.HandleFunc("/facilities/{id:[0-9]+}/availability", reservationHandler.GetFacilityAvailability).Methods("GET")
 	api.HandleFunc("/sport-complexes", sportComplexHandler.GetAllSportComplexes).Methods("GET")
 	api.HandleFunc("/sport-complexes/{id:[0-9]+}", sportComplexHandler.GetSportComplexByID).Methods("GET")
 	api.HandleFunc("/sport-complexes/{id:[0-9]+}/facilities", facilityHandler.GetFacilitiesByComplexID).Methods("GET")
@@ -46,6 +47,10 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	protected.HandleFunc("/facilities/my", facilityHandler.GetMyFacilities).Methods("GET")
 	protected.HandleFunc("/sport-complexes", sportComplexHandler.CreateSportComplex).Methods("POST")
 	protected.HandleFunc("/facilities", facilityHandler.CreateFacility).Methods("POST")
+	// Reservation routes (authenticated users)
+	protected.HandleFunc("/reservations", reservationHandler.CreateReservation).Methods("POST")
+	protected.HandleFunc("/reservations/my", reservationHandler.GetUserReservations).Methods("GET")
+	protected.HandleFunc("/reservations/{id:[0-9]+}/cancel", reservationHandler.CancelReservation).Methods("POST")
 
 	// Admin routes - manage all pending items
 	adminRoutes := protected.PathPrefix("/admin").Subrouter()

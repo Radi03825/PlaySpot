@@ -1,0 +1,277 @@
+import { useState, useEffect } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { getFacilityAvailability, createReservation } from "../services/api";
+import type { DayAvailability, AvailableSlot } from "../types";
+import "../styles/BookingModal.css";
+
+interface BookingModalProps {
+    facilityId: number;
+    facilityName: string;
+    onClose: () => void;
+    onSuccess: () => void;
+}
+
+export default function BookingModal({ facilityId, facilityName, onClose, onSuccess }: BookingModalProps) {
+    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+    const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [loadingSlots, setLoadingSlots] = useState(false);
+    const [error, setError] = useState("");
+    const [totalPrice, setTotalPrice] = useState(0);
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [booking, setBooking] = useState(false);
+    const [dayAvailability, setDayAvailability] = useState<DayAvailability | null>(null);
+
+    useEffect(() => {
+        if (selectedDate) {
+            fetchDayAvailability(selectedDate);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedDate, facilityId]);
+
+    const fetchDayAvailability = async (date: Date) => {
+        try {
+            setLoadingSlots(true);
+            setError("");
+            setSelectedSlots([]);
+            setTotalPrice(0);
+
+            const dateStr = date.toISOString().split('T')[0];
+            const nextDay = new Date(date);
+            nextDay.setDate(nextDay.getDate() + 1);
+            const nextDayStr = nextDay.toISOString().split('T')[0];
+
+            const data = await getFacilityAvailability(facilityId, dateStr, nextDayStr);
+
+            if (data && data.length > 0) {
+                setDayAvailability(data[0]);
+            } else {
+                setDayAvailability(null);
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to load availability");
+            setDayAvailability(null);
+        } finally {
+            setLoadingSlots(false);
+        }
+    };
+
+    const handleSlotToggle = (slot: AvailableSlot) => {
+        if (!slot.available) return;
+
+        const slotKey = `${slot.start_time}-${slot.end_time}`;
+        const isSelected = selectedSlots.includes(slotKey);
+
+        let newSlots: string[];
+        if (isSelected) {
+            newSlots = selectedSlots.filter(s => s !== slotKey);
+        } else {
+            newSlots = [...selectedSlots, slotKey].sort();
+        }
+
+        setSelectedSlots(newSlots);
+
+        // Calculate total price - sum of all selected slots' prices
+        const daySlots = dayAvailability?.slots || [];
+        const price = newSlots.reduce((total, key) => {
+            const slotData = daySlots.find(s => `${s.start_time}-${s.end_time}` === key);
+            if (slotData) {
+                // Calculate hours for this slot
+                const [startHour, startMin] = slotData.start_time.split(':').map(Number);
+                const [endHour, endMin] = slotData.end_time.split(':').map(Number);
+                const hours = (endHour * 60 + endMin - startHour * 60 - startMin) / 60;
+                return total + (slotData.price_per_hour * hours);
+            }
+            return total;
+        }, 0);
+        setTotalPrice(price);
+    };
+
+    const handleBooking = () => {
+        if (selectedSlots.length === 0) {
+            setError("Please select at least one time slot");
+            return;
+        }
+        setShowConfirmation(true);
+    };
+
+    const confirmBooking = async () => {
+        if (selectedSlots.length === 0 || !selectedDate) return;
+
+        try {
+            setBooking(true);
+            setError("");
+
+            // Find consecutive slots
+            const daySlots = dayAvailability?.slots || [];
+            const sortedSlots = selectedSlots
+                .map(key => daySlots.find(s => `${s.start_time}-${s.end_time}` === key))
+                .filter(Boolean) as AvailableSlot[];
+
+            if (sortedSlots.length === 0) {
+                throw new Error("No valid slots selected");
+            }
+
+            const startTime = sortedSlots[0].start_time;
+            const endTime = sortedSlots[sortedSlots.length - 1].end_time;
+
+            const dateStr = selectedDate.toISOString().split('T')[0];
+            const startDateTime = `${dateStr}T${startTime}:00`;
+            const endDateTime = `${dateStr}T${endTime}:00`;
+
+            await createReservation({
+                facility_id: facilityId,
+                start_time: new Date(startDateTime).toISOString(),
+                end_time: new Date(endDateTime).toISOString(),
+            });
+
+            onSuccess();
+            onClose();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to create reservation");
+            setShowConfirmation(false);
+        } finally {
+            setBooking(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="modal-overlay" onClick={onClose}>
+                <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
+                    <div className="modal-header">
+                        <h2>Book {facilityName}</h2>
+                        <button className="close-btn" onClick={onClose}>&times;</button>
+                    </div>
+                    <div className="modal-body">
+                        <div className="loading">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h2>Book {facilityName}</h2>
+                    <button className="close-btn" onClick={onClose}>&times;</button>
+                </div>
+
+                <div className="modal-body">
+                    {error && <div className="error-message">{error}</div>}
+
+                    <div className="date-selector">
+                        <label>Select Date:</label>
+                        <DatePicker
+                            selected={selectedDate}
+                            onChange={(date) => {
+                                setSelectedDate(date);
+                            }}
+                            minDate={new Date()}
+                            dateFormat="EEEE, MMMM d, yyyy"
+                            inline
+                        />
+                    </div>
+
+                    {loadingSlots && (
+                        <div className="loading">Loading time slots...</div>
+                    )}
+
+                    {!loadingSlots && dayAvailability && dayAvailability.is_open && (
+                        <div className="slots-container">
+                            <h3>Available Time Slots</h3>
+                            <div className="slots-grid">
+                                {dayAvailability.slots.map((slot, index) => {
+                                    const slotKey = `${slot.start_time}-${slot.end_time}`;
+                                    const isSelected = selectedSlots.includes(slotKey);
+                                    return (
+                                        <button
+                                            key={index}
+                                            className={`slot-btn ${!slot.available ? 'unavailable' : ''} ${isSelected ? 'selected' : ''}`}
+                                            onClick={() => handleSlotToggle(slot)}
+                                            disabled={!slot.available}
+                                        >
+                                            <div className="slot-time">{slot.start_time} - {slot.end_time}</div>
+                                            <div className="slot-price">€{slot.price_per_hour.toFixed(2)}/hr</div>
+                                            {!slot.available && <div className="slot-status">Booked</div>}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {!loadingSlots && dayAvailability && !dayAvailability.is_open && (
+                        <div className="closed-message">This facility is closed on this date.</div>
+                    )}
+
+                    {!loadingSlots && !dayAvailability && selectedDate && (
+                        <div className="closed-message">No availability information for this date.</div>
+                    )}
+                </div>
+
+                <div className="modal-footer">
+                    <div className="booking-summary">
+                        <div className="summary-item">
+                            <span>Selected Slots:</span>
+                            <span>{selectedSlots.length}</span>
+                        </div>
+                        <div className="summary-item total">
+                            <span>Total Price:</span>
+                            <span>€{totalPrice.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div className="modal-actions">
+                        <button className="btn-cancel" onClick={onClose}>Cancel</button>
+                        <button
+                            className="btn-book"
+                            onClick={handleBooking}
+                            disabled={selectedSlots.length === 0 || booking}
+                        >
+                            {booking ? 'Booking...' : 'Book Now'}
+                        </button>
+                    </div>
+                </div>
+
+                {showConfirmation && (
+                    <div className="confirmation-overlay">
+                        <div className="confirmation-box">
+                            <h3>Confirm Booking</h3>
+                            <p>Are you sure you want to book this time slot?</p>
+                            <p className="confirmation-details">
+                                <strong>Date:</strong> {selectedDate?.toLocaleDateString('en-US', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                })}<br />
+                                <strong>Slots:</strong> {selectedSlots.length}<br />
+                                <strong>Total:</strong> €{totalPrice.toFixed(2)}
+                            </p>
+                            <div className="confirmation-actions">
+                                <button
+                                    className="btn-cancel"
+                                    onClick={() => setShowConfirmation(false)}
+                                    disabled={booking}
+                                >
+                                    No
+                                </button>
+                                <button
+                                    className="btn-confirm"
+                                    onClick={confirmBooking}
+                                    disabled={booking}
+                                >
+                                    {booking ? 'Processing...' : 'Yes, Book It'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
