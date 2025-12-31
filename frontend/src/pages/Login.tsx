@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { login as loginApi, resendVerificationEmail } from "../services/api";
+import { login as loginApi, googleLogin, linkGoogleAccount, resendVerificationEmail } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import PasswordInput from "../components/PasswordInput";
+import { GoogleLogin } from '@react-oauth/google';
+import type { CredentialResponse } from '@react-oauth/google';
 import "../styles/Auth.css";
 
 export default function Login() {
@@ -12,6 +14,10 @@ export default function Login() {
     const [showResendVerification, setShowResendVerification] = useState(false);
     const [resendMessage, setResendMessage] = useState("");
     const [isResending, setIsResending] = useState(false);
+    const [showLinkModal, setShowLinkModal] = useState(false);
+    const [linkPassword, setLinkPassword] = useState("");
+    const [linkData, setLinkData] = useState<{email: string, googleId: string} | null>(null);
+    const [isLinking, setIsLinking] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
@@ -63,6 +69,71 @@ export default function Login() {
         }
     }
 
+    async function handleGoogleLogin(credentialResponse: CredentialResponse) {
+        setErrors({});
+        setShowResendVerification(false);
+        setResendMessage("");
+
+        try {
+            if (!credentialResponse.credential) {
+                setErrors({ general: "Failed to get Google credentials" });
+                return;
+            }
+
+            const response = await googleLogin(credentialResponse.credential);
+            const accessToken = response?.access_token;
+            const refreshToken = response?.refresh_token;
+            const user = response?.user;
+
+            if (user?.id && accessToken && refreshToken) {
+                login(accessToken, refreshToken, user);
+                navigate("/");
+            } else {
+                setErrors({ general: "Google login failed" });
+            }
+        } catch (error: any) {
+            // Check if account linking is required
+            if (error.isLinkRequired && error.data) {
+                setLinkData({
+                    email: error.data.email,
+                    googleId: error.data.google_id
+                });
+                setShowLinkModal(true);
+                setLinkPassword("");
+            } else {
+                const errorMessage = error instanceof Error ? error.message : "Google login failed";
+                setErrors({ general: errorMessage });
+            }
+        }
+    }
+
+    async function handleLinkAccount() {
+        if (!linkData) return;
+
+        setIsLinking(true);
+        setErrors({});
+
+        try {
+            const response = await linkGoogleAccount(linkData.email, linkPassword, linkData.googleId);
+            const accessToken = response?.access_token;
+            const refreshToken = response?.refresh_token;
+            const user = response?.user;
+
+            if (user?.id && accessToken && refreshToken) {
+                login(accessToken, refreshToken, user);
+                setShowLinkModal(false);
+                navigate("/");
+            } else {
+                setErrors({ link: "Failed to link account" });
+            }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Failed to link account";
+            setErrors({ link: errorMessage });
+        } finally {
+            setIsLinking(false);
+        }
+    }
+
     return (
         <div className="auth-container">
             <form onSubmit={handleLogin} className="auth-form">
@@ -103,6 +174,22 @@ export default function Login() {
 
                 <button type="submit">Login</button>
 
+                <div className="google-login-container">
+                    <div className="divider">
+                        <span>OR</span>
+                    </div>
+                    <GoogleLogin
+                        onSuccess={handleGoogleLogin}
+                        onError={() => {
+                            setErrors({ general: "Google Sign-In failed" });
+                        }}
+                        theme="outline"
+                        size="large"
+                        text="signin_with"
+                        width="100%"
+                    />
+                </div>
+
                 {showResendVerification && (
                     <div className="resend-verification">
                         <p>Didn't receive the verification email?</p>
@@ -120,6 +207,52 @@ export default function Login() {
             <p className="auth-footer">
                 Don't have an account? <Link to="/register">Register here</Link>
             </p>
+
+            {/* Account Linking Modal */}
+            {showLinkModal && linkData && (
+                <div className="modal-overlay" onClick={() => setShowLinkModal(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>Link Google Account</h2>
+                        <p>An account with email <strong>{linkData.email}</strong> already exists.</p>
+                        <p>Enter your password to link your Google account and enable login with both methods.</p>
+
+                        {errors.link && (
+                            <div className="error-message general-error">{errors.link}</div>
+                        )}
+
+                        <div className="form-field">
+                            <PasswordInput
+                                value={linkPassword}
+                                onChange={setLinkPassword}
+                                placeholder="Enter your password"
+                                hasError={!!errors.link}
+                                required
+                            />
+                        </div>
+
+                        <div className="modal-buttons">
+                            <button
+                                onClick={handleLinkAccount}
+                                disabled={isLinking || !linkPassword}
+                                className="btn-primary"
+                            >
+                                {isLinking ? "Linking..." : "Link Account"}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowLinkModal(false);
+                                    setLinkPassword("");
+                                    setErrors({});
+                                }}
+                                className="btn-secondary"
+                                disabled={isLinking}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

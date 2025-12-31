@@ -1,13 +1,16 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/Radi03825/PlaySpot/internal/dto"
 	"github.com/Radi03825/PlaySpot/internal/middleware"
 	"github.com/Radi03825/PlaySpot/internal/service"
+	"google.golang.org/api/idtoken"
 )
 
 type UserHandler struct {
@@ -114,6 +117,114 @@ func (u *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 		"user":          user,
+	})
+}
+
+func (u *UserHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
+	var req dto.GoogleLoginDTO
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid request payload"})
+		return
+	}
+
+	// Verify the ID token with Google
+	// For simplicity, we'll extract the claims from the token
+	// In production, you should verify the token with Google's API
+	payload, err := verifyGoogleIDToken(req.IDToken)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid Google token"})
+		return
+	}
+
+	// Get user agent from request
+	userAgent := r.Header.Get("User-Agent")
+
+	accessToken, refreshToken, user, err := u.service.GoogleLogin(
+		payload.Subject,
+		payload.Email,
+		payload.Name,
+		userAgent,
+	)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+
+		// Check if account linking is required
+		if err.Error() == "ACCOUNT_LINK_REQUIRED" {
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"error":         "Account linking required",
+				"link_required": true,
+				"email":         payload.Email,
+				"google_id":     payload.Subject,
+				"message":       "An account with this email already exists. Please enter your password to link your Google account.",
+			})
+			return
+		}
+
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	user.Password = "" // Hide password in response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+		"user":          user,
+	})
+}
+
+func (u *UserHandler) LinkGoogleAccount(w http.ResponseWriter, r *http.Request) {
+	var req dto.LinkGoogleAccountDTO
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid request payload"})
+		return
+	}
+
+	// Get user agent from request
+	userAgent := r.Header.Get("User-Agent")
+
+	accessToken, refreshToken, user, err := u.service.LinkGoogleAccount(
+		req.Email,
+		req.Password,
+		req.GoogleID,
+		userAgent,
+	)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+
+		if strings.Contains(err.Error(), "password") {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(ErrorResponse{
+				Error: "Invalid password",
+				Field: "password",
+			})
+			return
+		}
+
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	user.Password = "" // Hide password in response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+		"user":          user,
+		"message":       "Google account linked successfully! You can now login with either method.",
 	})
 }
 
@@ -395,4 +506,34 @@ func (u *UserHandler) ResendVerificationEmail(w http.ResponseWriter, r *http.Req
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "Verification email sent successfully. Please check your inbox.",
 	})
+}
+
+// GoogleTokenPayload represents the claims from a Google ID token
+type GoogleTokenPayload struct {
+	Subject string
+	Email   string
+	Name    string
+}
+
+// verifyGoogleIDToken verifies a Google ID token and returns the payload
+func verifyGoogleIDToken(idToken string) (*GoogleTokenPayload, error) {
+	// Get Google Client ID from environment variable
+	clientID := os.Getenv("GOOGLE_CLIENT_ID")
+
+	// Note: In production, you should set the audience parameter to your Google Client ID
+	// For now, we'll use the client ID from env or empty string for development
+	payload, err := idtoken.Validate(context.Background(), idToken, clientID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract user information from the payload
+	email, _ := payload.Claims["email"].(string)
+	name, _ := payload.Claims["name"].(string)
+
+	return &GoogleTokenPayload{
+		Subject: payload.Subject,
+		Email:   email,
+		Name:    name,
+	}, nil
 }

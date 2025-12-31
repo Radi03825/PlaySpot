@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8081/api"; //TODO: move to env variable
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8081/api";
 
 export async function register(name: string, email: string, password: string, birthDate: string) {
     return fetch(`${API_URL}/register`, {
@@ -21,6 +21,44 @@ export async function login(email: string, password: string) {
 
     if (!response.ok) {
         throw new Error(data.error || "Login failed");
+    }
+
+    return data;
+}
+
+export async function googleLogin(idToken: string) {
+    const response = await fetch(`${API_URL}/google-login`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+        body: JSON.stringify({id_token: idToken}),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        // Return the data even on error to check for link_required
+        if (data.link_required) {
+            throw { isLinkRequired: true, data };
+        }
+        throw new Error(data.error || "Google login failed");
+    }
+
+    return data;
+}
+
+export async function linkGoogleAccount(email: string, password: string, googleId: string) {
+    const response = await fetch(`${API_URL}/link-google-account`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+        body: JSON.stringify({email, password, google_id: googleId}),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to link Google account");
     }
 
     return data;

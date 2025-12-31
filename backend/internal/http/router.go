@@ -13,6 +13,8 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	// Public routes
 	api.HandleFunc("/register", userHandler.RegisterUser).Methods("POST")
 	api.HandleFunc("/login", userHandler.LoginUser).Methods("POST")
+	api.HandleFunc("/google-login", userHandler.GoogleLogin).Methods("POST")
+	api.HandleFunc("/link-google-account", userHandler.LinkGoogleAccount).Methods("POST")
 	api.HandleFunc("/forgot-password", userHandler.ForgotPassword).Methods("POST")
 	api.HandleFunc("/reset-password", userHandler.ResetPassword).Methods("POST")
 	api.HandleFunc("/refresh-token", userHandler.RefreshToken).Methods("POST")
@@ -49,8 +51,8 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	protected.HandleFunc("/facilities", facilityHandler.CreateFacility).Methods("POST")
 	// Reservation routes (authenticated users)
 	protected.HandleFunc("/reservations", reservationHandler.CreateReservation).Methods("POST")
-	protected.HandleFunc("/reservations/my", reservationHandler.GetUserReservations).Methods("GET")
-	protected.HandleFunc("/reservations/{id:[0-9]+}/cancel", reservationHandler.CancelReservation).Methods("POST")
+	protected.HandleFunc("/reservations/user", reservationHandler.GetUserReservations).Methods("GET")
+	protected.HandleFunc("/reservations/{id:[0-9]+}/cancel", reservationHandler.CancelReservation).Methods("PUT", "POST")
 
 	// Admin routes - manage all pending items
 	adminRoutes := protected.PathPrefix("/admin").Subrouter()

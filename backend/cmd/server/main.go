@@ -64,16 +64,27 @@ func main() {
 
 	router := http2.NewRouter(userHandler, facilityHandler, sportComplexHandler, reservationHandler)
 
+	// Get frontend URL from environment or use default
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
+
 	handlerr := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173"}, // React URL
+		AllowedOrigins:   []string{frontendURL},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
 	}).Handler(router)
 
-	port := os.Getenv("BE_PORT")
+	// Get server port from environment or use default
+	port := os.Getenv("SERVER_PORT")
+	if port == "" {
+		port = "8081"
+	}
 
-	fmt.Printf("Server is running on port %s\n", port)
+	fmt.Printf("Server starting on :%s\n", port)
+	fmt.Printf("Allowing CORS from: %s\n", frontendURL)
 	err = http.ListenAndServe(":"+port, handlerr)
 	if err != nil {
 		fmt.Printf("Server error: %v\n", err)

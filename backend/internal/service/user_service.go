@@ -63,6 +63,12 @@ func (s *UserService) RegisterUser(user dto.RegisterUserDTO) (*model.User, error
 		return nil, err
 	}
 
+	// Add local auth identity (email-based login)
+	err = s.repo.AddAuthIdentity(newUser.ID, "local", user.Email)
+	if err != nil {
+		return nil, err
+	}
+
 	// Generate and send verification email
 	verificationToken, err := s.tokenService.GenerateVerificationToken(newUser.ID)
 	if err == nil {
@@ -201,4 +207,117 @@ func (s *UserService) ResendVerificationEmail(email string) error {
 
 	// Send verification email
 	return s.emailService.SendVerificationEmail(user.Email, user.Name, verificationToken)
+}
+
+func (s *UserService) GoogleLogin(googleID, email, name string, userAgent string) (string, string, *model.User, error) {
+	// Try to find user by Google ID first
+	user, err := s.repo.GetUserByAuthProvider("google", googleID)
+
+	// If not found by Google ID, check by email
+	if err != nil {
+		user, err = s.repo.GetUserByEmail(email)
+
+		// If user doesn't exist at all, create a new one
+		if err != nil {
+			newUser := &model.User{
+				Name:            name,
+				Email:           email,
+				RoleID:          2,          // Default role ID for regular users
+				IsEmailVerified: true,       // Google users are already verified
+				BirthDate:       time.Now(), // Default birth date, can be updated later
+			}
+
+			err = s.repo.CreateUser(newUser)
+			if err != nil {
+				return "", "", nil, err
+			}
+
+			// Add Google auth identity
+			err = s.repo.AddAuthIdentity(newUser.ID, "google", googleID)
+			if err != nil {
+				return "", "", nil, err
+			}
+
+			user = newUser
+		} else {
+			// User exists with same email
+			// Check if they already have a Google auth identity
+			hasGoogle, err := s.repo.HasAuthIdentity(user.ID, "google")
+			if err != nil {
+				return "", "", nil, err
+			}
+
+			if !hasGoogle {
+				// User exists but doesn't have Google linked yet
+				// Check if they have a local auth (password)
+				hasLocal, err := s.repo.HasAuthIdentity(user.ID, "local")
+				if err != nil {
+					return "", "", nil, err
+				}
+
+				if hasLocal {
+					// User has local auth, need to verify password before linking
+					return "", "", user, errors.New("ACCOUNT_LINK_REQUIRED")
+				} else {
+					// User exists but has no auth methods (shouldn't happen normally)
+					// Just add Google auth
+					err = s.repo.AddAuthIdentity(user.ID, "google", googleID)
+					if err != nil {
+						return "", "", nil, err
+					}
+				}
+			}
+			// If hasGoogle is true, user is already linked, just login
+		}
+	}
+
+	// Create access token
+	accessToken, err := s.tokenService.CreateAccessToken(user)
+	if err != nil {
+		return "", "", nil, err
+	}
+
+	// Create refresh token
+	refreshToken, err := s.tokenService.GenerateRefreshToken(user.ID, userAgent)
+	if err != nil {
+		return "", "", nil, err
+	}
+
+	return accessToken, refreshToken, user, nil
+}
+
+func (s *UserService) LinkGoogleAccount(email, password, googleID string, userAgent string) (string, string, *model.User, error) {
+	// Get user by email
+	user, err := s.repo.GetUserByEmail(email)
+	if err != nil {
+		return "", "", nil, errors.New("user not found")
+	}
+
+	// Verify password (only if user has a password)
+	if user.Password != "" {
+		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+		if err != nil {
+			return "", "", nil, errors.New("invalid password")
+		}
+	}
+
+	// Link Google account by adding auth identity
+	err = s.repo.AddAuthIdentity(user.ID, "google", googleID)
+	if err != nil {
+		return "", "", nil, err
+	}
+
+	// Create access token
+	accessToken, err := s.tokenService.CreateAccessToken(user)
+	if err != nil {
+		return "", "", nil, err
+	}
+
+	// Create refresh token
+	refreshToken, err := s.tokenService.GenerateRefreshToken(user.ID, userAgent)
+	if err != nil {
+		return "", "", nil, err
+	}
+
+	return accessToken, refreshToken, user, nil
 }

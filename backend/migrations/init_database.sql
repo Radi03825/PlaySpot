@@ -20,11 +20,20 @@ CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
+    password VARCHAR(255),
     role_id BIGINT NOT NULL DEFAULT 1 REFERENCES roles(id),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     birth_date TIMESTAMP,
     is_email_verified BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE user_auth_identities (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    provider VARCHAR(50) NOT NULL,
+    provider_user_id VARCHAR(255),
+    UNIQUE (provider, provider_user_id),
+    UNIQUE (user_id, provider)
 );
 
 -- Create indexes for users table
@@ -107,4 +116,35 @@ CREATE TABLE IF NOT EXISTS facilities (
     capacity INTEGER,
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- 10. CREATE FACILITY SCHEDULES TABLE
+CREATE TABLE IF NOT EXISTS facility_schedules (
+    id BIGSERIAL PRIMARY KEY,
+    facility_id BIGINT NOT NULL REFERENCES facilities(id) ON DELETE CASCADE,
+    open_time TIME NOT NULL,
+    close_time TIME NOT NULL,
+    day_type VARCHAR(50) NOT NULL CHECK (day_type IN ('weekday', 'weekend'))
+);
+
+-- 11. CREATE FACILITY PRICING TABLE
+CREATE TABLE IF NOT EXISTS facility_pricings (
+    id BIGSERIAL PRIMARY KEY,
+    facility_id BIGINT NOT NULL REFERENCES facilities(id) ON DELETE CASCADE,
+    day_type VARCHAR(50) NOT NULL CHECK (day_type IN ('weekday', 'weekend')),
+    start_hour TIME NOT NULL,
+    end_hour TIME NOT NULL,
+    price_per_hour NUMERIC(10, 2) NOT NULL
+);
+
+-- 12. CREATE FACILITY RESERVATIONS TABLE
+CREATE TABLE IF NOT EXISTS facility_reservations (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    facility_id BIGINT NOT NULL REFERENCES facilities(id) ON DELETE CASCADE,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    status VARCHAR(50) NOT NULL CHECK (status IN ('pending', 'confirmed', 'cancelled', 'completed')),
+    total_price NUMERIC(10, 2) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
