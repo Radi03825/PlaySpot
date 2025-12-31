@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("token");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
+        localStorage.removeItem("has_calendar_access");
     };
 
     const updateToken = (newToken: string) => {

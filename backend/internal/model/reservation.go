@@ -20,14 +20,15 @@ type FacilityPricing struct {
 }
 
 type FacilityReservation struct {
-	ID         int64     `json:"id"`
-	UserID     int64     `json:"user_id"`
-	FacilityID int64     `json:"facility_id"`
-	StartTime  time.Time `json:"start_time"`
-	EndTime    time.Time `json:"end_time"`
-	Status     string    `json:"status"` // 'pending', 'confirmed', 'cancelled', 'completed'
-	TotalPrice float64   `json:"total_price"`
-	CreatedAt  time.Time `json:"created_at"`
+	ID                    int64     `json:"id"`
+	UserID                int64     `json:"user_id"`
+	FacilityID            int64     `json:"facility_id"`
+	StartTime             time.Time `json:"start_time"`
+	EndTime               time.Time `json:"end_time"`
+	Status                string    `json:"status"` // 'pending', 'confirmed', 'cancelled', 'completed'
+	TotalPrice            float64   `json:"total_price"`
+	CreatedAt             time.Time `json:"created_at"`
+	GoogleCalendarEventID *string   `json:"google_calendar_event_id,omitempty"`
 }
 
 type AvailableSlot struct {

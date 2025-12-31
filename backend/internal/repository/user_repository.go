@@ -156,6 +156,97 @@ func (r *UserRepository) AddAuthIdentity(userID int64, provider, providerUserID 
 	return err
 }
 
+func (r *UserRepository) AddAuthIdentityWithTokens(userID int64, provider, providerUserID, accessToken, refreshToken string, tokenExpiry time.Time) error {
+	// Add the auth identity first
+	identityQuery := `INSERT INTO user_auth_identities (user_id, provider, provider_user_id)
+	                  VALUES ($1, $2, $3)
+	                  ON CONFLICT (user_id, provider) DO UPDATE
+	                  SET provider_user_id = EXCLUDED.provider_user_id`
+
+	_, err := r.db.Exec(identityQuery, userID, provider, providerUserID)
+	if err != nil {
+		return err
+	}
+
+	// If we have Google tokens, save them to the tokens table
+	if accessToken != "" && refreshToken != "" {
+		return r.UpdateGoogleCalendarTokens(userID, accessToken, refreshToken, tokenExpiry)
+	}
+
+	return nil
+}
+
+func (r *UserRepository) UpdateGoogleTokens(userID int64, accessToken, refreshToken string, tokenExpiry time.Time) error {
+	// This is now an alias for UpdateGoogleCalendarTokens
+	return r.UpdateGoogleCalendarTokens(userID, accessToken, refreshToken, tokenExpiry)
+}
+
+// UpdateGoogleCalendarTokens saves Google OAuth tokens to the tokens table
+func (r *UserRepository) UpdateGoogleCalendarTokens(userID int64, accessToken, refreshToken string, tokenExpiry time.Time) error {
+	// Start a transaction to ensure both tokens are saved together
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Delete existing Google tokens for this user to avoid duplicates
+	deleteQuery := `DELETE FROM tokens WHERE user_id = $1 AND token_type IN ('google_access', 'google_refresh')`
+	_, err = tx.Exec(deleteQuery, userID)
+	if err != nil {
+		return err
+	}
+
+	// Insert new access token
+	insertAccessQuery := `INSERT INTO tokens (user_id, token, token_type, expires_at, created_at, used, revoked)
+	                      VALUES ($1, $2, 'google_access', $3, NOW(), FALSE, FALSE)`
+	_, err = tx.Exec(insertAccessQuery, userID, accessToken, tokenExpiry)
+	if err != nil {
+		return err
+	}
+
+	// Insert new refresh token (refresh tokens typically don't expire, set far future date)
+	refreshExpiry := time.Now().AddDate(1, 0, 0) // 1 year from now
+	insertRefreshQuery := `INSERT INTO tokens (user_id, token, token_type, expires_at, created_at, used, revoked)
+	                       VALUES ($1, $2, 'google_refresh', $3, NOW(), FALSE, FALSE)`
+	_, err = tx.Exec(insertRefreshQuery, userID, refreshToken, refreshExpiry)
+	if err != nil {
+		return err
+	}
+
+	// Commit transaction
+	return tx.Commit()
+}
+
+func (r *UserRepository) GetGoogleTokens(userID int64) (accessToken, refreshToken string, tokenExpiry time.Time, err error) {
+	// Get access token
+	accessQuery := `SELECT token, expires_at FROM tokens 
+	                WHERE user_id = $1 AND token_type = 'google_access' 
+	                AND used = FALSE AND revoked = FALSE
+	                ORDER BY created_at DESC LIMIT 1`
+	err = r.db.QueryRow(accessQuery, userID).Scan(&accessToken, &tokenExpiry)
+	if err != nil && err != sql.ErrNoRows {
+		return "", "", time.Time{}, err
+	}
+
+	// Get refresh token
+	refreshQuery := `SELECT token FROM tokens 
+	                 WHERE user_id = $1 AND token_type = 'google_refresh' 
+	                 AND used = FALSE AND revoked = FALSE
+	                 ORDER BY created_at DESC LIMIT 1`
+	err = r.db.QueryRow(refreshQuery, userID).Scan(&refreshToken)
+	if err != nil && err != sql.ErrNoRows {
+		return "", "", time.Time{}, err
+	}
+
+	// If no tokens found, return empty strings (not an error, just means calendar not connected)
+	if accessToken == "" && refreshToken == "" {
+		return "", "", time.Time{}, nil
+	}
+
+	return accessToken, refreshToken, tokenExpiry, nil
+}
+
 func (r *UserRepository) GetAuthIdentities(userID int64) ([]model.UserAuthIdentity, error) {
 	query := `SELECT id, user_id, provider, provider_user_id
 	          FROM user_auth_identities
@@ -179,6 +270,17 @@ func (r *UserRepository) GetAuthIdentities(userID int64) ([]model.UserAuthIdenti
 		if err != nil {
 			return nil, err
 		}
+
+		// If this is a Google identity, get tokens from tokens table
+		if identity.Provider == "google" {
+			accessToken, refreshToken, tokenExpiry, err := r.GetGoogleTokens(userID)
+			if err == nil && accessToken != "" {
+				identity.GoogleAccessToken = &accessToken
+				identity.GoogleRefreshToken = &refreshToken
+				identity.TokenExpiry = &tokenExpiry
+			}
+		}
+
 		identities = append(identities, identity)
 	}
 

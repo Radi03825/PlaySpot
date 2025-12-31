@@ -59,7 +59,12 @@ export default function FacilityDetailsPage() {
     };
 
     const handleBookingSuccess = () => {
-        alert("Booking successful! Check your reservations in your profile.");
+        const hasCalendar = localStorage.getItem('has_calendar_access') === 'true';
+        if (hasCalendar) {
+            alert("✅ Booking successful!\n\n📅 Event added to your Google Calendar.\n\nCheck your reservations in 'My Bookings'.");
+        } else {
+            alert("✅ Booking successful!\n\nCheck your reservations in 'My Bookings'.");
+        }
     };
 
     if (loading) {

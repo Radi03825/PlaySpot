@@ -146,7 +146,7 @@ func (r *ReservationRepository) CheckReservationConflict(facilityID int64, start
 // GetUserReservations retrieves all reservations for a user
 func (r *ReservationRepository) GetUserReservations(userID int64) ([]model.FacilityReservation, error) {
 	query := `
-		SELECT id, user_id, facility_id, start_time, end_time, status, total_price, created_at
+		SELECT id, user_id, facility_id, start_time, end_time, status, total_price, created_at, google_calendar_event_id
 		FROM facility_reservations
 		WHERE user_id = $1
 		ORDER BY start_time DESC
@@ -160,11 +160,15 @@ func (r *ReservationRepository) GetUserReservations(userID int64) ([]model.Facil
 	var reservations []model.FacilityReservation
 	for rows.Next() {
 		var reservation model.FacilityReservation
+		var eventID sql.NullString
 		err := rows.Scan(&reservation.ID, &reservation.UserID, &reservation.FacilityID,
 			&reservation.StartTime, &reservation.EndTime, &reservation.Status,
-			&reservation.TotalPrice, &reservation.CreatedAt)
+			&reservation.TotalPrice, &reservation.CreatedAt, &eventID)
 		if err != nil {
 			return nil, err
+		}
+		if eventID.Valid {
+			reservation.GoogleCalendarEventID = &eventID.String
 		}
 		reservations = append(reservations, reservation)
 	}
@@ -172,26 +176,62 @@ func (r *ReservationRepository) GetUserReservations(userID int64) ([]model.Facil
 	return reservations, nil
 }
 
-// CancelReservation cancels a reservation
-func (r *ReservationRepository) CancelReservation(reservationID, userID int64) error {
+// CancelReservation cancels a reservation and returns it
+func (r *ReservationRepository) CancelReservation(reservationID, userID int64) (*model.FacilityReservation, error) {
 	query := `
 		UPDATE facility_reservations
 		SET status = 'cancelled'
 		WHERE id = $1 AND user_id = $2 AND status != 'cancelled'
+		RETURNING id, user_id, facility_id, start_time, end_time, status, total_price, created_at, google_calendar_event_id
 	`
-	result, err := r.db.Exec(query, reservationID, userID)
+	var reservation model.FacilityReservation
+	var eventID sql.NullString
+	err := r.db.QueryRow(query, reservationID, userID).Scan(
+		&reservation.ID, &reservation.UserID, &reservation.FacilityID,
+		&reservation.StartTime, &reservation.EndTime, &reservation.Status,
+		&reservation.TotalPrice, &reservation.CreatedAt, &eventID,
+	)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	if eventID.Valid {
+		reservation.GoogleCalendarEventID = &eventID.String
 	}
 
-	rowsAffected, err := result.RowsAffected()
+	return &reservation, nil
+}
+
+// UpdateReservationCalendarEventID updates the Google Calendar event ID for a reservation
+func (r *ReservationRepository) UpdateReservationCalendarEventID(reservationID int64, eventID string) error {
+	query := `
+		UPDATE facility_reservations
+		SET google_calendar_event_id = $1
+		WHERE id = $2
+	`
+	_, err := r.db.Exec(query, eventID, reservationID)
+	return err
+}
+
+// GetReservationByID retrieves a reservation by its ID
+func (r *ReservationRepository) GetReservationByID(reservationID int64) (*model.FacilityReservation, error) {
+	query := `
+		SELECT id, user_id, facility_id, start_time, end_time, status, total_price, created_at, google_calendar_event_id
+		FROM facility_reservations
+		WHERE id = $1
+	`
+	var reservation model.FacilityReservation
+	var eventID sql.NullString
+	err := r.db.QueryRow(query, reservationID).Scan(
+		&reservation.ID, &reservation.UserID, &reservation.FacilityID,
+		&reservation.StartTime, &reservation.EndTime, &reservation.Status,
+		&reservation.TotalPrice, &reservation.CreatedAt, &eventID,
+	)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	if eventID.Valid {
+		reservation.GoogleCalendarEventID = &eventID.String
 	}
 
-	if rowsAffected == 0 {
-		return sql.ErrNoRows
-	}
-
-	return nil
+	return &reservation, nil
 }

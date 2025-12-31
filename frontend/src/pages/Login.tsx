@@ -35,6 +35,8 @@ export default function Login() {
 
             if (user?.id && accessToken && refreshToken) {
                 login(accessToken, refreshToken, user);
+                // Email/password login doesn't have calendar access
+                localStorage.setItem('has_calendar_access', 'false');
                 navigate("/");
             } else {
                 setErrors({ general: "Invalid email or password" });
@@ -80,6 +82,7 @@ export default function Login() {
                 return;
             }
 
+            // Use the credential (ID token) for login
             const response = await googleLogin(credentialResponse.credential);
             const accessToken = response?.access_token;
             const refreshToken = response?.refresh_token;
@@ -87,16 +90,18 @@ export default function Login() {
 
             if (user?.id && accessToken && refreshToken) {
                 login(accessToken, refreshToken, user);
+                localStorage.setItem('has_calendar_access', 'false');
                 navigate("/");
             } else {
                 setErrors({ general: "Google login failed" });
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Check if account linking is required
-            if (error.isLinkRequired && error.data) {
+            const err = error as { isLinkRequired?: boolean; data?: { email: string; google_id: string } };
+            if (err.isLinkRequired && err.data) {
                 setLinkData({
-                    email: error.data.email,
-                    googleId: error.data.google_id
+                    email: err.data.email,
+                    googleId: err.data.google_id
                 });
                 setShowLinkModal(true);
                 setLinkPassword("");
@@ -180,9 +185,8 @@ export default function Login() {
                     </div>
                     <GoogleLogin
                         onSuccess={handleGoogleLogin}
-                        onError={() => {
-                            setErrors({ general: "Google Sign-In failed" });
-                        }}
+                        onError={() => setErrors({ general: "Google login failed" })}
+                        useOneTap
                         theme="outline"
                         size="large"
                         text="signin_with"

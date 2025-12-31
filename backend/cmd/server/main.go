@@ -45,6 +45,14 @@ func main() {
 	// Create email service
 	emailService := service.NewEmailService()
 
+	// Create Google Calendar service
+	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
+	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	if googleClientSecret == "" {
+		fmt.Println("Warning: GOOGLE_CLIENT_SECRET not set, Google Calendar integration will be limited")
+	}
+	googleCalendarService := service.NewGoogleCalendarService(googleClientID, googleClientSecret)
+
 	// Create token service first as it's needed by user service
 	tokenService := service.NewTokenService(tokenRepo, userRepo)
 
@@ -54,10 +62,10 @@ func main() {
 	// Create sport complex and facility services
 	sportComplexService := service.NewSportComplexService(sportComplexRepo, facilityRepo, userRepo)
 	facilityService := service.NewFacilityService(facilityRepo, userRepo)
-	reservationService := service.NewReservationService(reservationRepo)
+	reservationService := service.NewReservationService(reservationRepo, userRepo, facilityRepo, googleCalendarService)
 
 	// Create handlers
-	userHandler := handler.NewUserHandler(userService, tokenService)
+	userHandler := handler.NewUserHandler(userService, tokenService, googleCalendarService)
 	sportComplexHandler := handler.NewSportComplexHandler(sportComplexService)
 	facilityHandler := handler.NewFacilityHandler(facilityService, metadataRepo)
 	reservationHandler := handler.NewReservationHandler(reservationService)

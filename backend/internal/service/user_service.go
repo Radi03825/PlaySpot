@@ -209,7 +209,7 @@ func (s *UserService) ResendVerificationEmail(email string) error {
 	return s.emailService.SendVerificationEmail(user.Email, user.Name, verificationToken)
 }
 
-func (s *UserService) GoogleLogin(googleID, email, name string, userAgent string) (string, string, *model.User, error) {
+func (s *UserService) GoogleLogin(googleID, email, name string, userAgent string, googleAccessToken, googleRefreshToken string, tokenExpiry time.Time) (string, string, *model.User, error) {
 	// Try to find user by Google ID first
 	user, err := s.repo.GetUserByAuthProvider("google", googleID)
 
@@ -232,8 +232,12 @@ func (s *UserService) GoogleLogin(googleID, email, name string, userAgent string
 				return "", "", nil, err
 			}
 
-			// Add Google auth identity
-			err = s.repo.AddAuthIdentity(newUser.ID, "google", googleID)
+			// Add Google auth identity with OAuth tokens
+			if googleAccessToken != "" && googleRefreshToken != "" {
+				err = s.repo.AddAuthIdentityWithTokens(newUser.ID, "google", googleID, googleAccessToken, googleRefreshToken, tokenExpiry)
+			} else {
+				err = s.repo.AddAuthIdentity(newUser.ID, "google", googleID)
+			}
 			if err != nil {
 				return "", "", nil, err
 			}
@@ -261,13 +265,26 @@ func (s *UserService) GoogleLogin(googleID, email, name string, userAgent string
 				} else {
 					// User exists but has no auth methods (shouldn't happen normally)
 					// Just add Google auth
-					err = s.repo.AddAuthIdentity(user.ID, "google", googleID)
+					if googleAccessToken != "" && googleRefreshToken != "" {
+						err = s.repo.AddAuthIdentityWithTokens(user.ID, "google", googleID, googleAccessToken, googleRefreshToken, tokenExpiry)
+					} else {
+						err = s.repo.AddAuthIdentity(user.ID, "google", googleID)
+					}
 					if err != nil {
 						return "", "", nil, err
 					}
 				}
+			} else {
+				// User already has Google linked, update tokens if provided
+				if googleAccessToken != "" && googleRefreshToken != "" {
+					_ = s.repo.UpdateGoogleTokens(user.ID, googleAccessToken, googleRefreshToken, tokenExpiry)
+				}
 			}
-			// If hasGoogle is true, user is already linked, just login
+		}
+	} else {
+		// User found by Google ID, update tokens if provided
+		if googleAccessToken != "" && googleRefreshToken != "" {
+			_ = s.repo.UpdateGoogleTokens(user.ID, googleAccessToken, googleRefreshToken, tokenExpiry)
 		}
 	}
 
@@ -320,4 +337,9 @@ func (s *UserService) LinkGoogleAccount(email, password, googleID string, userAg
 	}
 
 	return accessToken, refreshToken, user, nil
+}
+
+func (s *UserService) UpdateGoogleCalendarTokens(userID int64, accessToken, refreshToken string, expiry time.Time) error {
+	// Update the Google auth identity with calendar tokens
+	return s.repo.UpdateGoogleCalendarTokens(userID, accessToken, refreshToken, expiry)
 }

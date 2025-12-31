@@ -41,6 +41,7 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	// User routes
 	protected.HandleFunc("/profile", userHandler.GetProfile).Methods("GET")
 	protected.HandleFunc("/change-password", userHandler.ChangePassword).Methods("POST")
+	protected.HandleFunc("/connect-google-calendar", userHandler.ConnectGoogleCalendar).Methods("POST")
 	protected.HandleFunc("/active-devices", userHandler.GetActiveDevices).Methods("GET")
 	protected.HandleFunc("/logout-all", userHandler.LogoutAllDevices).Methods("POST")
 

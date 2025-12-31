@@ -115,3 +115,90 @@
     color: #004085;
     border-radius: 4px;
 }
+
+/* Google Calendar Integration Styles */
+.calendar-integration {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.calendar-status {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 1.1rem;
+}
+
+.calendar-status.connected {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.calendar-status.disconnected {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.calendar-status .status-icon {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.calendar-status.connected .status-icon {
+    color: #28a745;
+}
+
+.calendar-status.disconnected .status-icon {
+    color: #dc3545;
+}
+
+.calendar-info {
+    color: #666;
+    line-height: 1.6;
+}
+
+.connect-calendar-button {
+    padding: 0.75rem 1.5rem;
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.connect-calendar-button:hover:not(:disabled) {
+    background-color: #3367d6;
+}
+
+.connect-calendar-button:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.disconnect-button {
+    padding: 0.75rem 1.5rem;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.disconnect-button:hover {
+    background-color: #c82333;
+}

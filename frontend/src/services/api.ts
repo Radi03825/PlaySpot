@@ -26,12 +26,20 @@ export async function login(email: string, password: string) {
     return data;
 }
 
-export async function googleLogin(idToken: string) {
+export async function googleLogin(idToken: string, code?: string, scope?: string) {
+    const body: Record<string, string> = { id_token: idToken };
+    if (code) {
+        body.code = code;
+    }
+    if (scope) {
+        body.scope = scope;
+    }
+
     const response = await fetch(`${API_URL}/google-login`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         credentials: "include",
-        body: JSON.stringify({id_token: idToken}),
+        body: JSON.stringify(body),
     });
 
     const data = await response.json();
@@ -62,6 +70,19 @@ export async function linkGoogleAccount(email: string, password: string, googleI
     }
 
     return data;
+}
+
+export async function connectGoogleCalendar(code: string) {
+    return authenticatedFetch("/connect-google-calendar", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to connect Google Calendar");
+        }
+        return data;
+    });
 }
 
 export async function changePassword(oldPassword: string, newPassword: string) {

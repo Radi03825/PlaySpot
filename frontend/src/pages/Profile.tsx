@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import PasswordInput from "../components/PasswordInput";
-import { changePassword } from "../services/api";
+import { changePassword, connectGoogleCalendar } from "../services/api";
+import { useGoogleLogin } from '@react-oauth/google';
 import "../styles/Profile.css";
 
 // Function to calculate age in years, months, and days
@@ -37,6 +38,16 @@ export default function Profile() {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [loading, setLoading] = useState(false);
+    const [calendarConnected, setCalendarConnected] = useState(false);
+    const [calendarError, setCalendarError] = useState("");
+    const [calendarSuccess, setCalendarSuccess] = useState("");
+    const [connectingCalendar, setConnectingCalendar] = useState(false);
+
+    // Check if calendar is already connected
+    useEffect(() => {
+        const hasCalendar = localStorage.getItem('has_calendar_access') === 'true';
+        setCalendarConnected(hasCalendar);
+    }, []);
 
     const handleChangePassword = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,6 +79,41 @@ export default function Profile() {
         }
     };
 
+    const handleCalendarConnect = async (codeResponse: { code?: string }) => {
+        if (!codeResponse.code) {
+            setCalendarError("Failed to get Google authorization");
+            return;
+        }
+
+        setConnectingCalendar(true);
+        setCalendarError("");
+        setCalendarSuccess("");
+
+        try {
+            await connectGoogleCalendar(codeResponse.code);
+            setCalendarConnected(true);
+            localStorage.setItem('has_calendar_access', 'true');
+            setCalendarSuccess("✅ Google Calendar connected! Your future bookings will sync to your calendar.");
+        } catch (err) {
+            setCalendarError(err instanceof Error ? err.message : "Failed to connect Google Calendar");
+        } finally {
+            setConnectingCalendar(false);
+        }
+    };
+
+    const googleCalendarLogin = useGoogleLogin({
+        onSuccess: handleCalendarConnect,
+        onError: () => setCalendarError("Failed to connect Google Calendar"),
+        flow: 'auth-code',
+        scope: 'https://www.googleapis.com/auth/calendar.events',
+    });
+
+    const handleDisconnectCalendar = () => {
+        setCalendarConnected(false);
+        localStorage.setItem('has_calendar_access', 'false');
+        setCalendarSuccess("Google Calendar disconnected");
+    };
+
     return (
         <div className="profile-container">
             <h1>User Profile</h1>
@@ -90,6 +136,55 @@ export default function Profile() {
                             {user?.birth_date && calculateAge(user?.birth_date)}
                         </span>
                     </div>
+                </div>
+            </div>
+
+            {/* Google Calendar Integration Card */}
+            <div className="profile-card">
+                <h2>Google Calendar Integration</h2>
+
+                {calendarError && <div className="error-message">{calendarError}</div>}
+                {calendarSuccess && <div className="success-message">{calendarSuccess}</div>}
+
+                <div className="calendar-integration">
+                    {calendarConnected ? (
+                        <>
+                            <div className="calendar-status connected">
+                                <span className="status-icon">✓</span>
+                                <span>Google Calendar Connected</span>
+                            </div>
+                            <p className="calendar-info">
+                                Your bookings will automatically sync to your Google Calendar.
+                            </p>
+                            <button
+                                onClick={handleDisconnectCalendar}
+                                className="disconnect-button"
+                            >
+                                Disconnect Calendar
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <div className="calendar-status disconnected">
+                                <span className="status-icon">○</span>
+                                <span>Google Calendar Not Connected</span>
+                            </div>
+                            <p className="calendar-info">
+                                Connect your Google Calendar to automatically add your bookings to your calendar with reminders.
+                            </p>
+                            <button
+                                onClick={() => googleCalendarLogin()}
+                                disabled={connectingCalendar}
+                                className="connect-calendar-button"
+                            >
+                                {connectingCalendar ? "Connecting..." : "Connect Google Calendar"}
+                            </button>
+                            <div className="profile-note" style={{marginTop: '1rem', fontSize: '0.9rem'}}>
+                                <strong>Note:</strong> If you see "Access blocked" error, you need to be added as a test user in Google Cloud Console.
+                                Contact the administrator or check the documentation for setup instructions.
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 

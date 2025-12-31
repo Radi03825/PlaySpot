@@ -11,11 +11,24 @@ import (
 )
 
 type ReservationService struct {
-	repo *repository.ReservationRepository
+	repo                  *repository.ReservationRepository
+	userRepo              *repository.UserRepository
+	facilityRepo          *repository.FacilityRepository
+	googleCalendarService *GoogleCalendarService
 }
 
-func NewReservationService(repo *repository.ReservationRepository) *ReservationService {
-	return &ReservationService{repo: repo}
+func NewReservationService(
+	repo *repository.ReservationRepository,
+	userRepo *repository.UserRepository,
+	facilityRepo *repository.FacilityRepository,
+	googleCalendarService *GoogleCalendarService,
+) *ReservationService {
+	return &ReservationService{
+		repo:                  repo,
+		userRepo:              userRepo,
+		facilityRepo:          facilityRepo,
+		googleCalendarService: googleCalendarService,
+	}
 }
 
 // GetFacilityAvailability returns availability for a facility for a date range
@@ -192,7 +205,70 @@ func (s *ReservationService) CreateReservation(userID int64, req dto.CreateReser
 		return nil, fmt.Errorf("failed to create reservation: %w", err)
 	}
 
+	// Try to create Google Calendar event if user has Google auth
+	s.createCalendarEventForReservation(reservation)
+
 	return reservation, nil
+}
+
+// createCalendarEventForReservation creates a Google Calendar event for a reservation
+func (s *ReservationService) createCalendarEventForReservation(reservation *model.FacilityReservation) {
+	// Get Google tokens (regardless of whether user has Google auth identity)
+	accessToken, refreshToken, tokenExpiry, err := s.userRepo.GetGoogleTokens(reservation.UserID)
+	if err != nil {
+		// Error getting tokens, skip calendar event
+		fmt.Printf("No Google tokens for user %d: %v\n", reservation.UserID, err)
+		return
+	}
+
+	if accessToken == "" || refreshToken == "" {
+		// No valid tokens, user hasn't connected calendar
+		fmt.Printf("User %d has no calendar tokens\n", reservation.UserID)
+		return
+	}
+
+	fmt.Printf("Creating calendar event for user %d, reservation %d\n", reservation.UserID, reservation.ID)
+
+	// Get facility details
+	facility, err := s.facilityRepo.GetFacilityByID(reservation.FacilityID)
+	if err != nil {
+		// Failed to get facility, skip calendar event
+		fmt.Printf("Failed to get facility %d: %v\n", reservation.FacilityID, err)
+		return
+	}
+
+	// Create calendar event
+	description := fmt.Sprintf(
+		"Facility: %s\nCategory: %s\nSport: %s\nPrice: €%.2f",
+		facility.Name,
+		facility.CategoryName,
+		facility.SportName,
+		reservation.TotalPrice,
+	)
+
+	eventID, err := s.googleCalendarService.CreateEvent(
+		accessToken,
+		refreshToken,
+		tokenExpiry,
+		facility.Name,
+		description,
+		reservation.StartTime,
+		reservation.EndTime,
+	)
+
+	if err != nil {
+		// Failed to create calendar event, but don't fail the reservation
+		fmt.Printf("Failed to create calendar event for reservation %d: %v\n", reservation.ID, err)
+		return
+	}
+
+	fmt.Printf("✅ Calendar event created with ID: %s for reservation %d\n", eventID, reservation.ID)
+
+	// Update reservation with calendar event ID
+	updateErr := s.repo.UpdateReservationCalendarEventID(reservation.ID, eventID)
+	if updateErr != nil {
+		fmt.Printf("Failed to update reservation with calendar event ID: %v\n", updateErr)
+	}
 }
 
 // calculatePrice calculates the total price for a reservation
@@ -224,5 +300,39 @@ func (s *ReservationService) GetUserReservations(userID int64) ([]model.Facility
 
 // CancelReservation cancels a reservation
 func (s *ReservationService) CancelReservation(reservationID, userID int64) error {
-	return s.repo.CancelReservation(reservationID, userID)
+	// Cancel reservation and get details
+	reservation, err := s.repo.CancelReservation(reservationID, userID)
+	if err != nil {
+		return err
+	}
+
+	// Try to delete Google Calendar event if it exists
+	if reservation.GoogleCalendarEventID != nil && *reservation.GoogleCalendarEventID != "" {
+		s.deleteCalendarEventForReservation(reservation)
+	}
+
+	return nil
+}
+
+// deleteCalendarEventForReservation deletes a Google Calendar event for a reservation
+func (s *ReservationService) deleteCalendarEventForReservation(reservation *model.FacilityReservation) {
+	// Check if user has Google auth
+	hasGoogle, err := s.userRepo.HasAuthIdentity(reservation.UserID, "google")
+	if err != nil || !hasGoogle {
+		return
+	}
+
+	// Get Google tokens
+	accessToken, refreshToken, tokenExpiry, err := s.userRepo.GetGoogleTokens(reservation.UserID)
+	if err != nil || accessToken == "" {
+		return
+	}
+
+	// Delete calendar event
+	_ = s.googleCalendarService.DeleteEvent(
+		accessToken,
+		refreshToken,
+		tokenExpiry,
+		*reservation.GoogleCalendarEventID,
+	)
 }

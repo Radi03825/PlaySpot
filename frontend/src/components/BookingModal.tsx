@@ -155,15 +155,15 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
                 const startTime = group[0].start_time;
                 const endTime = group[group.length - 1].end_time;
 
-                // Parse times and construct UTC dates to avoid timezone conversion issues
+                // Parse times and construct local dates (not UTC)
                 const [startHour, startMin] = startTime.split(':').map(Number);
                 const [endHour, endMin] = endTime.split(':').map(Number);
 
                 const [year, month, day] = dateStr.split('-').map(Number);
 
-                // Create dates in UTC
-                const startDateTime = new Date(Date.UTC(year, month - 1, day, startHour, startMin, 0));
-                const endDateTime = new Date(Date.UTC(year, month - 1, day, endHour, endMin, 0));
+                // Create dates in LOCAL timezone (Sofia time)
+                const startDateTime = new Date(year, month - 1, day, startHour, startMin, 0);
+                const endDateTime = new Date(year, month - 1, day, endHour, endMin, 0);
 
                 await createReservation({
                     facility_id: facilityId,
@@ -172,6 +172,7 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
                 });
             }
 
+            // Success - parent component will show the alert
             onSuccess();
             onClose();
         } catch (err) {

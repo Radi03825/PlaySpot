@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Radi03825/PlaySpot/internal/dto"
 	"github.com/Radi03825/PlaySpot/internal/middleware"
@@ -14,8 +15,9 @@ import (
 )
 
 type UserHandler struct {
-	service      *service.UserService
-	tokenService *service.TokenService
+	service               *service.UserService
+	tokenService          *service.TokenService
+	googleCalendarService *service.GoogleCalendarService
 }
 
 type ErrorResponse struct {
@@ -23,10 +25,18 @@ type ErrorResponse struct {
 	Field string `json:"field,omitempty"`
 }
 
-func NewUserHandler(service *service.UserService, tokenService *service.TokenService) *UserHandler {
+// GoogleIDTokenPayload represents the claims from a Google ID token
+type GoogleIDTokenPayload struct {
+	Subject string
+	Email   string
+	Name    string
+}
+
+func NewUserHandler(service *service.UserService, tokenService *service.TokenService, googleCalendarService *service.GoogleCalendarService) *UserHandler {
 	return &UserHandler{
-		service:      service,
-		tokenService: tokenService,
+		service:               service,
+		tokenService:          tokenService,
+		googleCalendarService: googleCalendarService,
 	}
 }
 
@@ -130,14 +140,85 @@ func (u *UserHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify the ID token with Google
-	// For simplicity, we'll extract the claims from the token
-	// In production, you should verify the token with Google's API
-	payload, err := verifyGoogleIDToken(req.IDToken)
-	if err != nil {
+	var payload *GoogleIDTokenPayload
+	var googleAccessToken, googleRefreshToken string
+	var tokenExpiry time.Time
+
+	// Handle auth-code flow (for calendar access - optional)
+	if req.Code != "" {
+		// Only process calendar tokens if the scope includes calendar
+		if strings.Contains(req.Scope, "calendar") {
+			// Exchange code for access and refresh tokens
+			token, err := u.googleCalendarService.ExchangeCodeForTokens(req.Code)
+			if err != nil {
+				// If calendar exchange fails, fall back to regular login without calendar
+				// This prevents login failure if calendar verification is pending
+				if req.IDToken != "" {
+					payload, err = verifyGoogleIDToken(req.IDToken)
+					if err != nil {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusUnauthorized)
+						json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid Google token"})
+						return
+					}
+				} else {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusUnauthorized)
+					json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to exchange authorization code"})
+					return
+				}
+			} else {
+				googleAccessToken = token.AccessToken
+				googleRefreshToken = token.RefreshToken
+				tokenExpiry = token.Expiry
+
+				// Get user info from the token's ID token
+				if token.Extra("id_token") != nil {
+					idToken := token.Extra("id_token").(string)
+					payload, err = verifyGoogleIDToken(idToken)
+					if err != nil {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusUnauthorized)
+						json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid Google token"})
+						return
+					}
+				} else {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusUnauthorized)
+					json.NewEncoder(w).Encode(ErrorResponse{Error: "No ID token in response"})
+					return
+				}
+			}
+		} else {
+			// Code provided but no calendar scope - just use the ID token
+			if req.IDToken != "" {
+				payload, err = verifyGoogleIDToken(req.IDToken)
+				if err != nil {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusUnauthorized)
+					json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid Google token"})
+					return
+				}
+			} else {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(ErrorResponse{Error: "ID token required"})
+				return
+			}
+		}
+	} else if req.IDToken != "" {
+		// Handle ID token flow (standard login without calendar)
+		payload, err = verifyGoogleIDToken(req.IDToken)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid Google token"})
+			return
+		}
+	} else {
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid Google token"})
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Either code or id_token is required"})
 		return
 	}
 
@@ -149,6 +230,9 @@ func (u *UserHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 		payload.Email,
 		payload.Name,
 		userAgent,
+		googleAccessToken,
+		googleRefreshToken,
+		tokenExpiry,
 	)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -175,9 +259,10 @@ func (u *UserHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-		"user":          user,
+		"access_token":        accessToken,
+		"refresh_token":       refreshToken,
+		"user":                user,
+		"has_calendar_access": googleAccessToken != "",
 	})
 }
 
@@ -508,15 +593,63 @@ func (u *UserHandler) ResendVerificationEmail(w http.ResponseWriter, r *http.Req
 	})
 }
 
-// GoogleTokenPayload represents the claims from a Google ID token
-type GoogleTokenPayload struct {
-	Subject string
-	Email   string
-	Name    string
+func (u *UserHandler) ConnectGoogleCalendar(w http.ResponseWriter, r *http.Request) {
+	// Get user from context (set by middleware)
+	claims, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
+	var req struct {
+		Code string `json:"code"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid request payload"})
+		return
+	}
+
+	// Exchange code for tokens
+	token, err := u.googleCalendarService.ExchangeCodeForTokens(req.Code)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		// Log the actual error for debugging
+		println("Error exchanging code for tokens:", err.Error())
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to connect Google Calendar: " + err.Error()})
+		return
+	}
+
+	// Update user's Google Calendar tokens
+	err = u.service.UpdateGoogleCalendarTokens(
+		claims.UserID,
+		token.AccessToken,
+		token.RefreshToken,
+		token.Expiry,
+	)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		// Log the actual error for debugging
+		println("Error saving calendar credentials:", err.Error())
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to save calendar credentials: " + err.Error()})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "Google Calendar connected successfully",
+	})
 }
 
-// verifyGoogleIDToken verifies a Google ID token and returns the payload
-func verifyGoogleIDToken(idToken string) (*GoogleTokenPayload, error) {
+// verifyGoogleIDToken verifies the Google ID token and returns the payload
+func verifyGoogleIDToken(idToken string) (*GoogleIDTokenPayload, error) {
 	// Get Google Client ID from environment variable
 	clientID := os.Getenv("GOOGLE_CLIENT_ID")
 
@@ -531,7 +664,7 @@ func verifyGoogleIDToken(idToken string) (*GoogleTokenPayload, error) {
 	email, _ := payload.Claims["email"].(string)
 	name, _ := payload.Claims["name"].(string)
 
-	return &GoogleTokenPayload{
+	return &GoogleIDTokenPayload{
 		Subject: payload.Subject,
 		Email:   email,
 		Name:    name,
