@@ -13,9 +13,8 @@ interface BookingModalProps {
 }
 
 export default function BookingModal({ facilityId, facilityName, onClose, onSuccess }: BookingModalProps) {
-    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
-    const [loading, setLoading] = useState(false);
     const [loadingSlots, setLoadingSlots] = useState(false);
     const [error, setError] = useState("");
     const [totalPrice, setTotalPrice] = useState(0);
@@ -23,8 +22,14 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
     const [booking, setBooking] = useState(false);
     const [dayAvailability, setDayAvailability] = useState<DayAvailability | null>(null);
 
+    // Set today's date on mount
+    useEffect(() => {
+        setSelectedDate(new Date());
+    }, []);
+
     useEffect(() => {
         if (selectedDate) {
+            console.log("Fetching availability for date:", selectedDate.toISOString().split('T')[0]);
             fetchDayAvailability(selectedDate);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -42,14 +47,21 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
             nextDay.setDate(nextDay.getDate() + 1);
             const nextDayStr = nextDay.toISOString().split('T')[0];
 
+            console.log("Fetching availability from", dateStr, "to", nextDayStr);
             const data = await getFacilityAvailability(facilityId, dateStr, nextDayStr);
+            console.log("Received availability data:", data);
 
             if (data && data.length > 0) {
+                console.log("Day availability:", data[0]);
+                console.log("Is open:", data[0].is_open);
+                console.log("Slots count:", data[0].slots?.length);
                 setDayAvailability(data[0]);
             } else {
+                console.log("No availability data received");
                 setDayAvailability(null);
             }
         } catch (err) {
+            console.error("Error fetching availability:", err);
             setError(err instanceof Error ? err.message : "Failed to load availability");
             setDayAvailability(null);
         } finally {
@@ -89,10 +101,15 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
     };
 
     const handleBooking = () => {
+        if (!selectedDate) {
+            setError("Please select a date");
+            return;
+        }
         if (selectedSlots.length === 0) {
             setError("Please select at least one time slot");
             return;
         }
+        setError("");
         setShowConfirmation(true);
     };
 
@@ -103,7 +120,6 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
             setBooking(true);
             setError("");
 
-            // Find consecutive slots
             const daySlots = dayAvailability?.slots || [];
             const sortedSlots = selectedSlots
                 .map(key => daySlots.find(s => `${s.start_time}-${s.end_time}` === key))
@@ -113,18 +129,48 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
                 throw new Error("No valid slots selected");
             }
 
-            const startTime = sortedSlots[0].start_time;
-            const endTime = sortedSlots[sortedSlots.length - 1].end_time;
+            // Group consecutive slots into separate bookings
+            const consecutiveGroups: AvailableSlot[][] = [];
+            let currentGroup: AvailableSlot[] = [sortedSlots[0]];
+
+            for (let i = 1; i < sortedSlots.length; i++) {
+                const prevSlot = sortedSlots[i - 1];
+                const currentSlot = sortedSlots[i];
+
+                // Check if current slot starts exactly when previous slot ends (consecutive)
+                if (prevSlot.end_time === currentSlot.start_time) {
+                    currentGroup.push(currentSlot);
+                } else {
+                    // Non-consecutive, start a new group
+                    consecutiveGroups.push(currentGroup);
+                    currentGroup = [currentSlot];
+                }
+            }
+            consecutiveGroups.push(currentGroup);
 
             const dateStr = selectedDate.toISOString().split('T')[0];
-            const startDateTime = `${dateStr}T${startTime}:00`;
-            const endDateTime = `${dateStr}T${endTime}:00`;
 
-            await createReservation({
-                facility_id: facilityId,
-                start_time: new Date(startDateTime).toISOString(),
-                end_time: new Date(endDateTime).toISOString(),
-            });
+            // Create a reservation for each consecutive group
+            for (const group of consecutiveGroups) {
+                const startTime = group[0].start_time;
+                const endTime = group[group.length - 1].end_time;
+
+                // Parse times and construct UTC dates to avoid timezone conversion issues
+                const [startHour, startMin] = startTime.split(':').map(Number);
+                const [endHour, endMin] = endTime.split(':').map(Number);
+
+                const [year, month, day] = dateStr.split('-').map(Number);
+
+                // Create dates in UTC
+                const startDateTime = new Date(Date.UTC(year, month - 1, day, startHour, startMin, 0));
+                const endDateTime = new Date(Date.UTC(year, month - 1, day, endHour, endMin, 0));
+
+                await createReservation({
+                    facility_id: facilityId,
+                    start_time: startDateTime.toISOString(),
+                    end_time: endDateTime.toISOString(),
+                });
+            }
 
             onSuccess();
             onClose();
@@ -135,22 +181,6 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
             setBooking(false);
         }
     };
-
-    if (loading) {
-        return (
-            <div className="modal-overlay" onClick={onClose}>
-                <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
-                    <div className="modal-header">
-                        <h2>Book {facilityName}</h2>
-                        <button className="close-btn" onClick={onClose}>&times;</button>
-                    </div>
-                    <div className="modal-body">
-                        <div className="loading">Loading...</div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -163,58 +193,84 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
                 <div className="modal-body">
                     {error && <div className="error-message">{error}</div>}
 
-                    <div className="date-selector">
-                        <label>Select Date:</label>
-                        <DatePicker
-                            selected={selectedDate}
-                            onChange={(date) => {
-                                setSelectedDate(date);
-                            }}
-                            minDate={new Date()}
-                            dateFormat="EEEE, MMMM d, yyyy"
-                            inline
-                        />
-                    </div>
-
-                    {loadingSlots && (
-                        <div className="loading">Loading time slots...</div>
-                    )}
-
-                    {!loadingSlots && dayAvailability && dayAvailability.is_open && (
-                        <div className="slots-container">
-                            <h3>Available Time Slots</h3>
-                            <div className="slots-grid">
-                                {dayAvailability.slots.map((slot, index) => {
-                                    const slotKey = `${slot.start_time}-${slot.end_time}`;
-                                    const isSelected = selectedSlots.includes(slotKey);
-                                    return (
-                                        <button
-                                            key={index}
-                                            className={`slot-btn ${!slot.available ? 'unavailable' : ''} ${isSelected ? 'selected' : ''}`}
-                                            onClick={() => handleSlotToggle(slot)}
-                                            disabled={!slot.available}
-                                        >
-                                            <div className="slot-time">{slot.start_time} - {slot.end_time}</div>
-                                            <div className="slot-price">€{slot.price_per_hour.toFixed(2)}/hr</div>
-                                            {!slot.available && <div className="slot-status">Booked</div>}
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                    <div className="booking-content">
+                        <div className="date-selector">
+                            <label>Select Date:</label>
+                            <DatePicker
+                                selected={selectedDate}
+                                onChange={(date: Date | null) => {
+                                    setSelectedDate(date);
+                                }}
+                                minDate={new Date()}
+                                dateFormat="EEEE, MMMM d, yyyy"
+                                inline
+                            />
                         </div>
-                    )}
 
-                    {!loadingSlots && dayAvailability && !dayAvailability.is_open && (
-                        <div className="closed-message">This facility is closed on this date.</div>
-                    )}
+                        <div className="slots-section">
+                            {!selectedDate && (
+                                <div className="info-message">Please select a date to view available time slots</div>
+                            )}
 
-                    {!loadingSlots && !dayAvailability && selectedDate && (
-                        <div className="closed-message">No availability information for this date.</div>
-                    )}
+                            {selectedDate && loadingSlots && (
+                                <div className="loading">Loading time slots...</div>
+                            )}
+
+                            {selectedDate && !loadingSlots && dayAvailability && dayAvailability.is_open && dayAvailability.slots && dayAvailability.slots.length > 0 && (
+                                <div className="slots-container">
+                                    <h3>Available Time Slots</h3>
+                                    <div className="slots-grid">
+                                        {dayAvailability.slots.map((slot, index) => {
+                                            const slotKey = `${slot.start_time}-${slot.end_time}`;
+                                            const isSelected = selectedSlots.includes(slotKey);
+                                            return (
+                                                <button
+                                                    key={index}
+                                                    className={`slot-btn ${!slot.available ? 'unavailable' : ''} ${isSelected ? 'selected' : ''}`}
+                                                    onClick={() => handleSlotToggle(slot)}
+                                                    disabled={!slot.available}
+                                                >
+                                                    <div className="slot-time">{slot.start_time} - {slot.end_time}</div>
+                                                    <div className="slot-price">€{slot.price_per_hour.toFixed(2)}/hr</div>
+                                                    {!slot.available && <div className="slot-status">Booked</div>}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {selectedDate && !loadingSlots && dayAvailability && dayAvailability.is_open && (!dayAvailability.slots || dayAvailability.slots.length === 0) && (
+                                <div className="closed-message">
+                                    <p>No time slots available for this date.</p>
+                                    <p style={{fontSize: '0.9rem', color: '#999', marginTop: '0.5rem'}}>
+                                        The facility may not have pricing configured. Please contact support.
+                                    </p>
+                                </div>
+                            )}
+
+                            {selectedDate && !loadingSlots && dayAvailability && !dayAvailability.is_open && (
+                                <div className="closed-message">This facility is closed on this date.</div>
+                            )}
+
+                            {selectedDate && !loadingSlots && !dayAvailability && (
+                                <div className="closed-message">
+                                    <p>No availability information for this date.</p>
+                                    <p style={{fontSize: '0.9rem', color: '#999', marginTop: '0.5rem'}}>
+                                        The facility may not have schedules configured. Please try another date or contact support.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 <div className="modal-footer">
                     <div className="booking-summary">
+                        <div className="summary-item">
+                            <span>Selected Date:</span>
+                            <span>{selectedDate ? selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'None'}</span>
+                        </div>
                         <div className="summary-item">
                             <span>Selected Slots:</span>
                             <span>{selectedSlots.length}</span>
@@ -229,7 +285,7 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
                         <button
                             className="btn-book"
                             onClick={handleBooking}
-                            disabled={selectedSlots.length === 0 || booking}
+                            disabled={!selectedDate || selectedSlots.length === 0 || booking}
                         >
                             {booking ? 'Booking...' : 'Book Now'}
                         </button>

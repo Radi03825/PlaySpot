@@ -8,7 +8,7 @@ export default function Home() {
     return (
         <div className="home-container">
             <h1 className="home-title">
-                {isAuthenticated ? `Welcome back, ${user?.name}!` : "Welcome to PlaySpot"}
+                Welcome to PlaySpot
             </h1>
             <p className="home-subtitle">
                 Your ultimate destination for sports and activities!
@@ -27,19 +27,13 @@ export default function Home() {
                 )}
             </div>
 
-            {isAuthenticated && (
+            {isAuthenticated && user?.role_id !== 3 && (
                 <div className="manager-cta">
                     <h2>Do you own a sports facility?</h2>
                     <p>Register your sport complex or facility and reach more customers!</p>
-                    {user?.role_id === 3 ? (
-                        <Link to="/manage-facilities" className="cta-button">
-                            Manage Your Facilities
-                        </Link>
-                    ) : (
-                        <Link to="/become-manager" className="cta-button">
-                            Become a Facility Manager
-                        </Link>
-                    )}
+                    <Link to="/become-manager" className="cta-button">
+                        Become a Facility Manager
+                    </Link>
                 </div>
             )}
         </div>

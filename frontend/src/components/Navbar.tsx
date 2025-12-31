@@ -1,14 +1,27 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBars, faUser, faArrowRightFromBracket, faPeopleRoof } from "@fortawesome/free-solid-svg-icons";
+import { useState } from "react";
 import "../styles/Navbar.css";
 
 export default function Navbar() {
     const { user, isAuthenticated, logout } = useAuth();
     const navigate = useNavigate();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const handleLogout = () => {
         logout();
         navigate("/");
+        setIsMenuOpen(false);
+    };
+
+    const toggleMenu = () => {
+        setIsMenuOpen(!isMenuOpen);
+    };
+
+    const closeMenu = () => {
+        setIsMenuOpen(false);
     };
 
     return (
@@ -30,30 +43,45 @@ export default function Navbar() {
                                 Admin Panel
                             </Link>
                         )}
-                        {user?.role_id === 3 ? (
+                        {user?.role_id === 3 && (
                             <Link to="/manage-facilities" className="navbar-link manage">
                                 Manage Facilities
                             </Link>
-                        ) : user?.role_id === 2 && (
-                            <Link to="/become-manager" className="navbar-link manage">
-                                Become Manager
-                            </Link>
                         )}
-                        <span className="navbar-user">Welcome, {user?.name}</span>
-                        <Link to="/profile" className="navbar-link profile">
-                            Profile
+                        <Link to="/my-bookings" className="navbar-link bookings">
+                            My Bookings
                         </Link>
-                        <button onClick={handleLogout} className="navbar-link logout">
-                            Logout
-                        </button>
+                        <div className="navbar-menu-container">
+                            <button onClick={toggleMenu} className="navbar-menu-button" aria-label="Menu">
+                                <FontAwesomeIcon icon={faBars} />
+                            </button>
+                            {isMenuOpen && (
+                                <>
+                                    <div className="navbar-menu-overlay" onClick={closeMenu}></div>
+                                    <div className="navbar-menu-dropdown">
+                                        <Link to="/profile" className="navbar-menu-item" onClick={closeMenu}>
+                                            <FontAwesomeIcon icon={faUser} />
+                                            <span>Profile</span>
+                                        </Link>
+                                        {user?.role_id === 2 && (
+                                            <Link to="/become-manager" className="navbar-menu-item" onClick={closeMenu}>
+                                                <FontAwesomeIcon icon={faPeopleRoof} />
+                                                <span>Become Manager</span>
+                                            </Link>
+                                        )}
+                                        <button onClick={handleLogout} className="navbar-menu-item">
+                                            <FontAwesomeIcon icon={faArrowRightFromBracket} />
+                                            <span>Logout</span>
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </>
                 ) : (
                     <>
-                        <Link to="/login" className="navbar-link login">
-                            Login
-                        </Link>
-                        <Link to="/register" className="navbar-link register">
-                            Register
+                        <Link to="/login" className="navbar-link signin">
+                            Sign in
                         </Link>
                     </>
                 )}

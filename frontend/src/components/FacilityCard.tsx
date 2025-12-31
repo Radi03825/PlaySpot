@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import type { FacilityDetails } from "../types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleCheck } from "@fortawesome/free-solid-svg-icons";
 import "../styles/FacilityCard.css";
 
 interface FacilityCardProps {
@@ -18,7 +20,9 @@ const FacilityCard = ({ facility }: FacilityCardProps) => {
             <div className="facility-card-header">
                 <h3>{facility.name}</h3>
                 {facility.is_verified && (
-                    <span className="verified-badge-small">✓</span>
+                    <span className="verified-badge-small" title="Verified: Safe to use">
+                        <FontAwesomeIcon icon={faCircleCheck} />
+                    </span>
                 )}
             </div>
 

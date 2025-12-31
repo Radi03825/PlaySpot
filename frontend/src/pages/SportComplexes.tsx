@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllSportComplexes } from "../services/api";
 import type { SportComplex } from "../types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import "../styles/SportComplexes.css";
+import {faCircleCheck} from "@fortawesome/free-solid-svg-icons";
 
 export default function SportComplexes() {
     const [complexes, setComplexes] = useState<SportComplex[]>([]);
@@ -66,7 +68,9 @@ export default function SportComplexes() {
                             <div className="complex-card-header">
                                 <h3>{complex.name}</h3>
                                 {complex.is_verified && (
-                                    <span className="verified-badge">✓ Verified</span>
+                                    <span className="verified-badge" title="Verified: Safe to use">
+                                        <FontAwesomeIcon icon={faCircleCheck} />
+                                    </span>
                                 )}
                             </div>
                             <div className="complex-card-body">

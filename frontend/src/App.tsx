@@ -18,6 +18,7 @@ import FacilityDetails from "./pages/FacilityDetails";
 import ManageFacilities from "./pages/ManageFacilities";
 import BecomeManager from "./pages/BecomeManager";
 import AdminPanel from "./pages/AdminPanel";
+import MyBookings from "./pages/MyBookings";
 
 function App() {
     return (
@@ -61,6 +62,14 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <Profile />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/my-bookings"
+                            element={
+                                <ProtectedRoute>
+                                    <MyBookings />
                                 </ProtectedRoute>
                             }
                         />

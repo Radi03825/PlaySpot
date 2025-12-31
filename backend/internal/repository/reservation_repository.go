@@ -18,7 +18,7 @@ func NewReservationRepository(db *sql.DB) *ReservationRepository {
 // GetFacilitySchedules retrieves all schedules for a facility
 func (r *ReservationRepository) GetFacilitySchedules(facilityID int64) ([]model.FacilitySchedule, error) {
 	query := `
-		SELECT id, facility_id, open_time, close_time, day_type
+		SELECT id, facility_id, open_time::text, close_time::text, day_type
 		FROM facility_schedules
 		WHERE facility_id = $1
 		ORDER BY day_type
@@ -45,7 +45,7 @@ func (r *ReservationRepository) GetFacilitySchedules(facilityID int64) ([]model.
 // GetFacilityPricing retrieves all pricing for a facility
 func (r *ReservationRepository) GetFacilityPricing(facilityID int64) ([]model.FacilityPricing, error) {
 	query := `
-		SELECT id, facility_id, day_type, start_hour, end_hour, price_per_hour
+		SELECT id, facility_id, day_type, start_hour::text, end_hour::text, price_per_hour
 		FROM facility_pricings
 		WHERE facility_id = $1
 		ORDER BY day_type, start_hour

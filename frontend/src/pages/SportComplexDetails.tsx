@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getSportComplexById, getFacilitiesByComplexId } from "../services/api";
 import type { SportComplex, FacilityDetails } from "../types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleCheck } from "@fortawesome/free-solid-svg-icons";
 import FacilityCard from "../components/FacilityCard";
 import "../styles/SportComplexDetails.css";
 
@@ -81,7 +83,9 @@ export default function SportComplexDetails() {
                 <div className="complex-header">
                     <h1>{complex.name}</h1>
                     {complex.is_verified && (
-                        <span className="verified-badge">✓ Verified</span>
+                        <span className="verified-badge" title="Verified: Safe to use">
+                            <FontAwesomeIcon icon={faCircleCheck} />
+                        </span>
                     )}
                 </div>
 

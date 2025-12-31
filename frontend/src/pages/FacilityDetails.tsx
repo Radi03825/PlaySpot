@@ -3,8 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getFacilityById } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import type { FacilityDetails } from "../types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import BookingModal from "../components/BookingModal";
 import "../styles/FacilityDetails.css";
+import {faCircleCheck} from "@fortawesome/free-solid-svg-icons";
 
 export default function FacilityDetailsPage() {
     const { id } = useParams<{ id: string }>();
@@ -89,7 +91,9 @@ export default function FacilityDetailsPage() {
             <div className="facility-hero">
                 <h1>{facility.name}</h1>
                 {facility.is_verified && (
-                    <span className="verified-badge">✓ Verified</span>
+                    <span className="verified-badge" title="Verified: Safe to use">
+                        <FontAwesomeIcon icon={faCircleCheck} />
+                    </span>
                 )}
             </div>
 

@@ -97,8 +97,8 @@ func (s *ReservationService) buildDayAvailability(date time.Time, schedules []mo
 	}
 
 	// Create time slots (hourly)
-	currentSlot := time.Date(date.Year(), date.Month(), date.Day(), openTime.Hour(), 0, 0, 0, date.Location())
-	endOfDay := time.Date(date.Year(), date.Month(), date.Day(), closeTime.Hour(), 0, 0, 0, date.Location())
+	currentSlot := time.Date(date.Year(), date.Month(), date.Day(), openTime.Hour(), openTime.Minute(), 0, 0, date.Location())
+	endOfDay := time.Date(date.Year(), date.Month(), date.Day(), closeTime.Hour(), closeTime.Minute(), 0, 0, date.Location())
 
 	for currentSlot.Before(endOfDay) {
 		slotEnd := currentSlot.Add(1 * time.Hour)

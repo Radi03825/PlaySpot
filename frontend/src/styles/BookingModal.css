@@ -14,7 +14,7 @@
 .booking-modal {
     background: white;
     border-radius: 12px;
-    max-width: 800px;
+    max-width: 900px;
     width: 90%;
     max-height: 90vh;
     display: flex;
@@ -62,10 +62,26 @@
     padding: 1.5rem;
 }
 
+.booking-content {
+    display: flex;
+    gap: 2rem;
+    min-height: 400px;
+}
+
 .loading {
     text-align: center;
     padding: 2rem;
     color: #666;
+}
+
+.info-message {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #666;
+    font-size: 1rem;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    border: 2px dashed #ddd;
 }
 
 .error-message {
@@ -78,7 +94,8 @@
 }
 
 .date-selector {
-    margin-bottom: 1.5rem;
+    flex: 0 0 auto;
+    min-width: 320px;
 }
 
 .date-selector label {
@@ -101,6 +118,14 @@
 .date-selector select:focus {
     outline: none;
     border-color: #4CAF50;
+}
+
+/* Slots Section */
+.slots-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
 }
 
 /* Date Picker Styles */
@@ -166,6 +191,12 @@
     border-left-color: white;
 }
 
+.slots-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
 .slots-container h3 {
     margin: 0 0 1rem 0;
     color: #333;
@@ -174,8 +205,30 @@
 
 .slots-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 0.75rem;
+    overflow-y: auto;
+    max-height: 350px;
+    padding-right: 0.5rem;
+}
+
+/* Custom scrollbar for slots grid */
+.slots-grid::-webkit-scrollbar {
+    width: 8px;
+}
+
+.slots-grid::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.slots-grid::-webkit-scrollbar-thumb {
+    background: #4CAF50;
+    border-radius: 4px;
+}
+
+.slots-grid::-webkit-scrollbar-thumb:hover {
+    background: #45a049;
 }
 
 .slot-btn {
@@ -366,31 +419,31 @@
 .btn-confirm:disabled {
     background-color: #ccc;
     cursor: not-allowed;
-}.btn-confirm:hover:not(:disabled) {
-    background-color: #45a049;
 }
 
-.btn-confirm:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
-
+/* Responsive Design */
 @media (max-width: 768px) {
-    .booking-modal {
-        width: 95%;
-        max-height: 95vh;
+    .booking-content {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .date-selector {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .slots-section {
+        width: 100%;
     }
 
     .slots-grid {
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        max-height: 250px;
     }
 
-    .modal-actions {
-        flex-direction: column;
-    }
-
-    .btn-cancel, .btn-book {
-        width: 100%;
+    .booking-modal {
+        max-width: 95%;
+        max-height: 95vh;
     }
 }
-

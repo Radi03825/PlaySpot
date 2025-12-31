@@ -50,12 +50,8 @@
     opacity: 0.8;
 }
 
-.navbar-link.login {
+.navbar-link.signin {
     background-color: #007bff;
-}
-
-.navbar-link.register {
-    background-color: #28a745;
 }
 
 .navbar-link.profile {
@@ -65,4 +61,94 @@
 .navbar-link.logout {
     background-color: #dc3545;
 }
+
+/* Menu Container */
+.navbar-menu-container {
+    position: relative;
+}
+
+.navbar-menu-button {
+    background-color: transparent;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s;
+}
+
+.navbar-menu-button:hover {
+    opacity: 0.8;
+}
+
+/* Menu Overlay */
+.navbar-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+/* Menu Dropdown */
+.navbar-menu-dropdown {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 280px;
+    background-color: #2c2c2c;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 0;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* Menu Items */
+.navbar-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    color: white;
+    text-decoration: none;
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.3s;
+    width: 100%;
+    text-align: left;
+}
+
+.navbar-menu-item:hover {
+    background-color: #3a3a3a;
+}
+
+.navbar-menu-item svg {
+    width: 1.2rem;
+    height: 1.2rem;
+}
+
+.navbar-menu-item span {
+    flex: 1;
+}
+
 
