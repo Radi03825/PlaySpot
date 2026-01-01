@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS tokens (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token TEXT NOT NULL,
-    token_type VARCHAR(50) NOT NULL CHECK (token_type IN ('email_verification', 'password_reset', 'refresh')),
+    token_type VARCHAR(50) NOT NULL CHECK (token_type IN ('email_verification', 'password_reset', 'refresh', 'google_access', 'google_refresh')),
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     used BOOLEAN NOT NULL DEFAULT FALSE,
@@ -146,5 +146,6 @@ CREATE TABLE IF NOT EXISTS facility_reservations (
     end_time TIMESTAMP NOT NULL,
     status VARCHAR(50) NOT NULL CHECK (status IN ('pending', 'confirmed', 'cancelled', 'completed')),
     total_price NUMERIC(10, 2) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    google_calendar_event_id VARCHAR(255)
 );

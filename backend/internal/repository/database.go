@@ -33,22 +33,18 @@ func ConnectDatabase(initSchema, seedData bool) (*sql.DB, error) {
 	}
 
 	if initSchema {
-		// Initialize database schema (create tables, indexes, etc.)
 		err = InitializeSchema(db)
 		if err != nil {
 			log.Printf("Warning: Schema initialization failed: %v", err)
-			// Don't return error - tables might already exist
 		} else {
 			log.Println("Database schema initialized successfully")
 		}
 	}
 
 	if seedData {
-		// Seed basic data
 		err = SeedBasicData(db)
 		if err != nil {
 			log.Printf("Warning: Data seeding failed: %v", err)
-			// Don't return error - data might already exist
 		} else {
 			log.Println("Basic data seeded successfully")
 		}
@@ -59,12 +55,25 @@ func ConnectDatabase(initSchema, seedData bool) (*sql.DB, error) {
 
 // InitializeSchema creates all database tables, indexes, and functions
 func InitializeSchema(db *sql.DB) error {
-	// Fixed path relative to project root
-	migrationPath := filepath.Join("backend", "migrations", "init_database.sql")
+	possiblePaths := []string{
+		filepath.Join("backend", "migrations", "init_database.sql"),
+		filepath.Join("migrations", "init_database.sql"),
+		"init_database.sql",
+	}
 
-	sqlBytes, err := os.ReadFile(migrationPath)
+	var sqlBytes []byte
+	var err error
+
+	for _, migrationPath := range possiblePaths {
+		sqlBytes, err = os.ReadFile(migrationPath)
+		if err == nil {
+			log.Printf("Found schema file at: %s", migrationPath)
+			break
+		}
+	}
+
 	if err != nil {
-		return fmt.Errorf("failed to read schema file: %w", err)
+		return fmt.Errorf("failed to read schema file from any location: %w", err)
 	}
 
 	_, err = db.Exec(string(sqlBytes))
@@ -75,20 +84,68 @@ func InitializeSchema(db *sql.DB) error {
 	return nil
 }
 
-// SeedBasicData inserts default/basic data into the database
+// SeedBasicData inserts basic data into the database
+// Automatically discovers and executes all .sql files in the seeds folder
+// Files are executed in alphabetical order (Should be with numeric prefixes like 001_, 002_, etc.)
 func SeedBasicData(db *sql.DB) error {
-	// Fixed path relative to project root
-	seedPath := filepath.Join("backend", "migrations", "seed_data.sql")
-
-	sqlBytes, err := os.ReadFile(seedPath)
-	if err != nil {
-		return fmt.Errorf("failed to read seed file: %w", err)
+	possiblePaths := []string{
+		filepath.Join("backend", "migrations", "seeds"),
+		filepath.Join("migrations", "seeds"),
+		"seeds",
 	}
 
-	_, err = db.Exec(string(sqlBytes))
-	if err != nil {
-		return fmt.Errorf("failed to execute seed data: %w", err)
+	var migrationsPath string
+	var entries []os.DirEntry
+	var err error
+
+	for _, path := range possiblePaths {
+		entries, err = os.ReadDir(path)
+		if err == nil {
+			migrationsPath = path
+			log.Printf("Found seeds directory at: %s", path)
+			break
+		}
 	}
 
+	if err != nil {
+		log.Printf("Warning: Could not read seeds directory from any location: %v", err)
+		return nil // Don't fail if directory doesn't exist
+	}
+
+	// Filter and collect only .sql files
+	var sqlFiles []string
+	for _, entry := range entries {
+		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".sql" {
+			sqlFiles = append(sqlFiles, entry.Name())
+		}
+	}
+
+	if len(sqlFiles) == 0 {
+		log.Println("No seed files found in seeds directory")
+		return nil
+	}
+
+	log.Printf("Found %d seed file(s) to execute", len(sqlFiles))
+
+	// Execute each SQL file in order
+	for _, fileName := range sqlFiles {
+		migrationFile := filepath.Join(migrationsPath, fileName)
+
+		sqlBytes, err := os.ReadFile(migrationFile)
+		if err != nil {
+			log.Printf("Warning: Failed to read seed file %s: %v", fileName, err)
+			continue
+		}
+
+		_, err = db.Exec(string(sqlBytes))
+		if err != nil {
+			log.Printf("Warning: Failed to execute seed file %s: %v", fileName, err)
+			continue
+		}
+
+		log.Printf("Executed seed migration: %s", fileName)
+	}
+
+	log.Println("All seed migrations completed")
 	return nil
 }
