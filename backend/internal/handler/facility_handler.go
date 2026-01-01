@@ -7,6 +7,7 @@ import (
 
 	"github.com/Radi03825/PlaySpot/internal/dto"
 	"github.com/Radi03825/PlaySpot/internal/middleware"
+	"github.com/Radi03825/PlaySpot/internal/model"
 	"github.com/Radi03825/PlaySpot/internal/repository"
 	"github.com/Radi03825/PlaySpot/internal/service"
 	"github.com/gorilla/mux"
@@ -26,6 +27,41 @@ func NewFacilityHandler(service *service.FacilityService, metadataRepo *reposito
 
 func (h *FacilityHandler) GetAllFacilities(w http.ResponseWriter, r *http.Request) {
 	facilities, err := h.service.GetAllFacilities()
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(facilities)
+}
+
+func (h *FacilityHandler) SearchFacilities(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+
+	var params model.FacilitySearchParams
+	params.City = queryParams.Get("city")
+	params.Sport = queryParams.Get("sport")
+	params.Surface = queryParams.Get("surface")
+	params.Environment = queryParams.Get("environment")
+	params.SortBy = queryParams.Get("sort_by")
+	params.SortOrder = queryParams.Get("sort_order")
+
+	if minCapStr := queryParams.Get("min_capacity"); minCapStr != "" {
+		if minCap, err := strconv.Atoi(minCapStr); err == nil {
+			params.MinCapacity = minCap
+		}
+	}
+
+	if maxCapStr := queryParams.Get("max_capacity"); maxCapStr != "" {
+		if maxCap, err := strconv.Atoi(maxCapStr); err == nil {
+			params.MaxCapacity = maxCap
+		}
+	}
+
+	facilities, err := h.service.SearchFacilities(params)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -243,4 +279,17 @@ func (h *FacilityHandler) GetEnvironments(w http.ResponseWriter, r *http.Request
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(environments)
+}
+
+func (h *FacilityHandler) GetCities(w http.ResponseWriter, r *http.Request) {
+	cities, err := h.metadataRepo.GetCities()
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(cities)
 }

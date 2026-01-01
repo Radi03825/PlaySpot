@@ -28,6 +28,8 @@ export interface FacilityDetails extends Facility {
     environment_name: string;
     sport_name: string;
     sport_complex_name?: string;
+    city?: string;
+    address?: string;
 }
 
 export interface Category {

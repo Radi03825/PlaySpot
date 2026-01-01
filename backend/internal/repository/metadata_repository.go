@@ -89,3 +89,22 @@ func (r *MetadataRepository) GetEnvironments() ([]Environment, error) {
 
 	return environments, nil
 }
+
+func (r *MetadataRepository) GetCities() ([]string, error) {
+	query := `SELECT DISTINCT city FROM sport_complexes WHERE city IS NOT NULL AND city != '' AND is_verified = true AND is_active = true ORDER BY city`
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var cities []string
+	for rows.Next() {
+		var city string
+		if err := rows.Scan(&city); err != nil {
+			return nil, err
+		}
+		cities = append(cities, city)
+	}
+	return cities, nil
+}

@@ -274,6 +274,58 @@ export async function getAllFacilities() {
     return data;
 }
 
+export async function searchFacilities(params: {
+    city?: string;
+    sport?: string;
+    surface?: string;
+    environment?: string;
+    min_capacity?: number;
+    max_capacity?: number;
+    sort_by?: string;
+    sort_order?: string;
+}) {
+    const queryParams = new URLSearchParams();
+
+    if (params.city) queryParams.append("city", params.city);
+    if (params.sport) queryParams.append("sport", params.sport);
+    if (params.surface) queryParams.append("surface", params.surface);
+    if (params.environment) queryParams.append("environment", params.environment);
+    if (params.min_capacity) queryParams.append("min_capacity", params.min_capacity.toString());
+    if (params.max_capacity) queryParams.append("max_capacity", params.max_capacity.toString());
+    if (params.sort_by) queryParams.append("sort_by", params.sort_by);
+    if (params.sort_order) queryParams.append("sort_order", params.sort_order);
+
+    const response = await fetch(`${API_URL}/facilities/search?${queryParams.toString()}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to search facilities");
+    }
+
+    return data;
+}
+
+export async function getCities() {
+    const response = await fetch(`${API_URL}/facilities/metadata/cities`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch cities");
+    }
+
+    return data;
+}
+
 export async function getFacilityById(id: number) {
     const response = await fetch(`${API_URL}/facilities/${id}`, {
         method: "GET",

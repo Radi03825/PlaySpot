@@ -25,6 +25,10 @@ func (s *FacilityService) GetAllFacilities() ([]model.FacilityDetails, error) {
 	return s.repo.GetAllFacilities()
 }
 
+func (s *FacilityService) SearchFacilities(params model.FacilitySearchParams) ([]model.FacilityDetails, error) {
+	return s.repo.SearchFacilities(params)
+}
+
 func (s *FacilityService) GetFacilityByID(id int64) (*model.FacilityDetails, error) {
 	return s.repo.GetFacilityByID(id)
 }
