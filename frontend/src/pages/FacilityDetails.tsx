@@ -61,9 +61,9 @@ export default function FacilityDetailsPage() {
     const handleBookingSuccess = () => {
         const hasCalendar = localStorage.getItem('has_calendar_access') === 'true';
         if (hasCalendar) {
-            alert("✅ Booking successful!\n\n📅 Event added to your Google Calendar.\n\nCheck your reservations in 'My Bookings'.");
+            alert("Booking successful!\n\nEvent added to your Google Calendar.\n\nCheck your reservations in 'My Bookings'.");
         } else {
-            alert("✅ Booking successful!\n\nCheck your reservations in 'My Bookings'.");
+            alert("Booking successful!\n\nCheck your reservations in 'My Bookings'.");
         }
     };
 

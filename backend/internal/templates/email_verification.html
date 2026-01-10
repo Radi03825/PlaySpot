@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <style>
+    <meta charset="UTF-8">    <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .header { padding: 30px; text-align: center; border-radius: 10px 10px 0 0; border-bottom: 1px solid #eee; }
+        .header h1 { color: #000; font-weight: bold; margin: 0; }
         .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
         .button { display: inline-block; padding: 15px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
         .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
@@ -20,7 +20,7 @@
     </div>
     <div class="content">
         <h2>Hi {{.UserName}},</h2>
-        <p>Thank you for joining PlaySpot - your ultimate gaming community platform!</p>
+        <p>Thank you for joining PlaySpot – your ultimate assistant for quick and easy sports facility bookings!</p>
 
         <p>We're excited to have you on board. To get started and unlock all features, please verify your email address by clicking the button below:</p>
 
@@ -31,18 +31,9 @@
         <p>Or copy and paste this link into your browser:</p>
         <p style="background: #fff; padding: 10px; border-radius: 5px; word-break: break-all;">{{.VerificationLink}}</p>
 
-        <h3>What's waiting for you at PlaySpot:</h3>
-        <div class="feature">Connect with gamers worldwide</div>
-        <div class="feature">Discover and share gaming content</div>
-        <div class="feature">Join tournaments and competitions</div>
-        <div class="feature">Track your gaming progress</div>
-        <div class="feature">Build your gaming profile</div>
-
         <p style="margin-top: 30px;"><strong>Important:</strong> This verification link will expire in 24 hours for security reasons.</p>
 
         <p>If you didn't create an account with PlaySpot, you can safely ignore this email.</p>
-
-        <p>Happy Gaming!<br>The PlaySpot Team</p>
     </div>
     <div class="footer">
         <p>© 2025 PlaySpot. All rights reserved.</p>

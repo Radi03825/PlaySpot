@@ -38,6 +38,11 @@ export interface Category {
     sport_id: number;
 }
 
+export interface Sport {
+    id: number;
+    name: string;
+}
+
 export interface Surface {
     id: number;
     name: string;

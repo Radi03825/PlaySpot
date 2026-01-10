@@ -109,7 +109,7 @@ func SeedBasicData(db *sql.DB) error {
 
 	if err != nil {
 		log.Printf("Warning: Could not read seeds directory from any location: %v", err)
-		return nil // Don't fail if directory doesn't exist
+		return nil
 	}
 
 	// Filter and collect only .sql files

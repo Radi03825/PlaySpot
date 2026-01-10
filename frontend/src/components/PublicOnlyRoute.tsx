@@ -7,7 +7,12 @@ interface PublicOnlyRouteProps {
 }
 
 export default function PublicOnlyRoute({ children }: PublicOnlyRouteProps) {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
+
+    // Show nothing while loading auth state
+    if (loading) {
+        return null;
+    }
 
     // If user is logged in, redirect to home
     if (user) {

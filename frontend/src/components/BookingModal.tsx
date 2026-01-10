@@ -69,6 +69,18 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
         }
     };
 
+    const isSlotInPast = (slot: AvailableSlot, date: Date): boolean => {
+        const now = new Date();
+        const [year, month, day] = date.toISOString().split('T')[0].split('-').map(Number);
+        const [startHour, startMin] = slot.start_time.split(':').map(Number);
+        
+        // Create a date object for the slot start time
+        const slotDateTime = new Date(year, month - 1, day, startHour, startMin, 0);
+        
+        // Return true if the slot is in the past
+        return slotDateTime < now;
+    };
+
     const handleSlotToggle = (slot: AvailableSlot) => {
         if (!slot.available) return;
 
@@ -215,13 +227,13 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
 
                             {selectedDate && loadingSlots && (
                                 <div className="loading">Loading time slots...</div>
-                            )}
-
-                            {selectedDate && !loadingSlots && dayAvailability && dayAvailability.is_open && dayAvailability.slots && dayAvailability.slots.length > 0 && (
+                            )}                            {selectedDate && !loadingSlots && dayAvailability && dayAvailability.is_open && dayAvailability.slots && dayAvailability.slots.length > 0 && (
                                 <div className="slots-container">
                                     <h3>Available Time Slots</h3>
                                     <div className="slots-grid">
-                                        {dayAvailability.slots.map((slot, index) => {
+                                        {dayAvailability.slots
+                                            .filter(slot => !isSlotInPast(slot, selectedDate))
+                                            .map((slot, index) => {
                                             const slotKey = `${slot.start_time}-${slot.end_time}`;
                                             const isSelected = selectedSlots.includes(slotKey);
                                             return (
@@ -239,13 +251,14 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
                                         })}
                                     </div>
                                 </div>
-                            )}
-
-                            {selectedDate && !loadingSlots && dayAvailability && dayAvailability.is_open && (!dayAvailability.slots || dayAvailability.slots.length === 0) && (
+                            )}                            {selectedDate && !loadingSlots && dayAvailability && dayAvailability.is_open && (!dayAvailability.slots || dayAvailability.slots.length === 0 || dayAvailability.slots.filter(slot => !isSlotInPast(slot, selectedDate)).length === 0) && (
                                 <div className="closed-message">
                                     <p>No time slots available for this date.</p>
                                     <p style={{fontSize: '0.9rem', color: '#999', marginTop: '0.5rem'}}>
-                                        The facility may not have pricing configured. Please contact support.
+                                        {dayAvailability.slots && dayAvailability.slots.length > 0 
+                                            ? 'All available time slots are in the past.'
+                                            : 'The facility may not have pricing configured. Please contact support.'
+                                        }
                                     </p>
                                 </div>
                             )}

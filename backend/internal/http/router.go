@@ -23,11 +23,12 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 
 	// Public metadata routes
 	api.HandleFunc("/facilities/metadata/categories", facilityHandler.GetCategories).Methods("GET")
+	api.HandleFunc("/facilities/metadata/sports", facilityHandler.GetSports).Methods("GET")
 	api.HandleFunc("/facilities/metadata/surfaces", facilityHandler.GetSurfaces).Methods("GET")
 	api.HandleFunc("/facilities/metadata/environments", facilityHandler.GetEnvironments).Methods("GET")
 	api.HandleFunc("/facilities/metadata/cities", facilityHandler.GetCities).Methods("GET")
 
-	// Public browsing routes (register GET routes first)
+	// Public browsing routes
 	api.HandleFunc("/facilities", facilityHandler.GetAllFacilities).Methods("GET")
 	api.HandleFunc("/facilities/search", facilityHandler.SearchFacilities).Methods("GET")
 	api.HandleFunc("/facilities/{id:[0-9]+}", facilityHandler.GetFacilityByID).Methods("GET")

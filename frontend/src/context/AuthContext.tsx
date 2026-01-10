@@ -8,6 +8,7 @@ interface AuthContextType {
     login: (accessToken: string, refreshToken: string, user: User) => void;
     logout: () => void;
     isAuthenticated: boolean;
+    loading: boolean;
     updateToken: (newToken: string) => void;
 }
 
@@ -17,6 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [refreshToken, setRefreshToken] = useState<string | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
 
     // Load user, token, and refresh token from localStorage on mount
     useEffect(() => {
@@ -31,6 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (savedRefreshToken) {
             setRefreshToken(savedRefreshToken);
         }
+        
+        setLoading(false);
     }, []);
 
     const login = (accessToken: string, newRefreshToken: string, newUser: User) => {
@@ -55,9 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const updateToken = (newToken: string) => {
         setToken(newToken);
         localStorage.setItem("token", newToken);
-    };
-
-    return (
+    };    return (
         <AuthContext.Provider
             value={{
                 user,
@@ -66,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 login,
                 logout,
                 isAuthenticated: !!user && !!token,
+                loading,
                 updateToken,
             }}
         >

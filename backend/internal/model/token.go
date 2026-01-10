@@ -2,7 +2,6 @@ package model
 
 import "time"
 
-// TokenType represents the type of token
 type TokenType string
 
 const (
@@ -18,7 +17,7 @@ const (
 type Token struct {
 	ID        int64     `json:"id"`
 	UserID    int64     `json:"user_id"`
-	Token     string    `json:"-"` // Never expose in JSON (stores token string or hash)
+	Token     string    `json:"-"` // Never expose in JSON
 	TokenType TokenType `json:"token_type"`
 	ExpiresAt time.Time `json:"expires_at"`
 	CreatedAt time.Time `json:"created_at"`

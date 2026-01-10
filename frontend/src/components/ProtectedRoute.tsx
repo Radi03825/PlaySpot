@@ -7,7 +7,12 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, loading } = useAuth();
+
+    // Show nothing while loading auth state
+    if (loading) {
+        return null;
+    }
 
     if (!isAuthenticated) {
         // Redirect to login if not authenticated

@@ -18,6 +18,11 @@ type Category struct {
 	SportID int64  `json:"sport_id"`
 }
 
+type Sport struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
 type Surface struct {
 	ID          int64  `json:"id"`
 	Name        string `json:"name"`
@@ -48,6 +53,26 @@ func (r *MetadataRepository) GetCategories() ([]Category, error) {
 	}
 
 	return categories, nil
+}
+
+func (r *MetadataRepository) GetSports() ([]Sport, error) {
+	query := `SELECT id, name FROM sports ORDER BY name`
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var sports []Sport
+	for rows.Next() {
+		var sport Sport
+		if err := rows.Scan(&sport.ID, &sport.Name); err != nil {
+			return nil, err
+		}
+		sports = append(sports, sport)
+	}
+
+	return sports, nil
 }
 
 func (r *MetadataRepository) GetSurfaces() ([]Surface, error) {
