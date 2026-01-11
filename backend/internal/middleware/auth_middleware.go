@@ -25,7 +25,6 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-// JWTAuthMiddleware validates JWT tokens and adds user info to context
 func JWTAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -36,7 +35,6 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Extract token from "Bearer <token>"
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			w.Header().Set("Content-Type", "application/json")
@@ -47,9 +45,7 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 
 		tokenString := parts[1]
 
-		// Parse and validate token
 		token, err := jwt.ParseWithClaims(tokenString, &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
-			// Verify signing method
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
@@ -63,7 +59,6 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Extract claims
 		claims, ok := token.Claims.(*UserClaims)
 		if !ok {
 			w.Header().Set("Content-Type", "application/json")
@@ -72,13 +67,11 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Add user info to context
 		ctx := context.WithValue(r.Context(), UserContextKey, claims)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-// GetUserFromContext extracts user claims from request context
 func GetUserFromContext(ctx context.Context) (*UserClaims, bool) {
 	claims, ok := ctx.Value(UserContextKey).(*UserClaims)
 	return claims, ok

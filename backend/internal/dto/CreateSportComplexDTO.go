@@ -6,13 +6,15 @@ type CreateSportComplexDTO struct {
 	City        string                       `json:"city"`
 	Description string                       `json:"description"`
 	Facilities  []CreateFacilityInComplexDTO `json:"facilities,omitempty"`
+	ImageURLs   []string                     `json:"image_urls,omitempty"`
 }
 
 type CreateFacilityInComplexDTO struct {
-	Name          string `json:"name"`
-	CategoryID    int64  `json:"category_id"`
-	SurfaceID     int64  `json:"surface_id"`
-	EnvironmentID int64  `json:"environment_id"`
-	Description   string `json:"description"`
-	Capacity      int    `json:"capacity"`
+	Name          string   `json:"name"`
+	CategoryID    int64    `json:"category_id"`
+	SurfaceID     int64    `json:"surface_id"`
+	EnvironmentID int64    `json:"environment_id"`
+	Description   string   `json:"description"`
+	Capacity      int      `json:"capacity"`
+	ImageURLs     []string `json:"image_urls,omitempty"`
 }

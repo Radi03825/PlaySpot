@@ -140,9 +140,12 @@ func (h *FacilityHandler) CreateFacility(w http.ResponseWriter, r *http.Request)
 		req.CategoryID,
 		req.SurfaceID,
 		req.EnvironmentID,
+		req.City,
+		req.Address,
 		req.Description,
 		req.Capacity,
 		claims.UserID,
+		req.ImageURLs,
 	)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")

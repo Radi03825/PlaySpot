@@ -25,7 +25,6 @@ type ErrorResponse struct {
 	Field string `json:"field,omitempty"`
 }
 
-// GoogleIDTokenPayload represents the claims from a Google ID token
 type GoogleIDTokenPayload struct {
 	Subject string
 	Email   string
@@ -95,7 +94,6 @@ func (u *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get user agent from request
 	userAgent := r.Header.Get("User-Agent")
 
 	accessToken, refreshToken, user, err := u.service.LoginUser(req, userAgent)
@@ -148,7 +146,6 @@ func (u *UserHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 	if req.Code != "" {
 		// Only process calendar tokens if the scope includes calendar
 		if strings.Contains(req.Scope, "calendar") {
-			// Exchange code for access and refresh tokens
 			token, err := u.googleCalendarService.ExchangeCodeForTokens(req.Code)
 			if err != nil {
 				// If calendar exchange fails, fall back to regular login without calendar
@@ -172,7 +169,6 @@ func (u *UserHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 				googleRefreshToken = token.RefreshToken
 				tokenExpiry = token.Expiry
 
-				// Get user info from the token's ID token
 				if token.Extra("id_token") != nil {
 					idToken := token.Extra("id_token").(string)
 					payload, err = verifyGoogleIDToken(idToken)
@@ -222,7 +218,6 @@ func (u *UserHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get user agent from request
 	userAgent := r.Header.Get("User-Agent")
 
 	accessToken, refreshToken, user, err := u.service.GoogleLogin(
@@ -276,7 +271,6 @@ func (u *UserHandler) LinkGoogleAccount(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Get user agent from request
 	userAgent := r.Header.Get("User-Agent")
 
 	accessToken, refreshToken, user, err := u.service.LinkGoogleAccount(
@@ -364,7 +358,6 @@ func (u *UserHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
-	// Get user from context (set by middleware)
 	claims, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
 		w.Header().Set("Content-Type", "application/json")
@@ -388,7 +381,6 @@ func (u *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *UserHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	// Get user from context (set by middleware)
 	claims, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
 		w.Header().Set("Content-Type", "application/json")
@@ -441,7 +433,6 @@ func (u *UserHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get user agent from request for security verification
 	userAgent := r.Header.Get("User-Agent")
 
 	accessToken, err := u.tokenService.RefreshAccessToken(req.RefreshToken, userAgent)
@@ -460,7 +451,6 @@ func (u *UserHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *UserHandler) GetActiveDevices(w http.ResponseWriter, r *http.Request) {
-	// Get user from context (set by middleware)
 	claims, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
 		w.Header().Set("Content-Type", "application/json")
@@ -483,7 +473,6 @@ func (u *UserHandler) GetActiveDevices(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *UserHandler) LogoutAllDevices(w http.ResponseWriter, r *http.Request) {
-	// Get user from context (set by middleware)
 	claims, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
 		w.Header().Set("Content-Type", "application/json")
@@ -508,7 +497,6 @@ func (u *UserHandler) LogoutAllDevices(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *UserHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-	// Get token from query parameter
 	token := r.URL.Query().Get("token")
 	if token == "" {
 		w.Header().Set("Content-Type", "application/json")
@@ -594,7 +582,6 @@ func (u *UserHandler) ResendVerificationEmail(w http.ResponseWriter, r *http.Req
 }
 
 func (u *UserHandler) ConnectGoogleCalendar(w http.ResponseWriter, r *http.Request) {
-	// Get user from context (set by middleware)
 	claims, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
 		w.Header().Set("Content-Type", "application/json")
@@ -614,12 +601,11 @@ func (u *UserHandler) ConnectGoogleCalendar(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Exchange code for tokens
 	token, err := u.googleCalendarService.ExchangeCodeForTokens(req.Code)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		// Log the actual error for debugging
+
 		println("Error exchanging code for tokens:", err.Error())
 		json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to connect Google Calendar: " + err.Error()})
 		return
@@ -635,7 +621,7 @@ func (u *UserHandler) ConnectGoogleCalendar(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		// Log the actual error for debugging
+
 		println("Error saving calendar credentials:", err.Error())
 		json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to save calendar credentials: " + err.Error()})
 		return
@@ -648,19 +634,14 @@ func (u *UserHandler) ConnectGoogleCalendar(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-// verifyGoogleIDToken verifies the Google ID token and returns the payload
 func verifyGoogleIDToken(idToken string) (*GoogleIDTokenPayload, error) {
-	// Get Google Client ID from environment variable
 	clientID := os.Getenv("GOOGLE_CLIENT_ID")
 
-	// Note: In production, you should set the audience parameter to your Google Client ID
-	// For now, we'll use the client ID from env or empty string for development
 	payload, err := idtoken.Validate(context.Background(), idToken, clientID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Extract user information from the payload
 	email, _ := payload.Claims["email"].(string)
 	name, _ := payload.Claims["name"].(string)
 

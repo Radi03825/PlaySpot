@@ -20,7 +20,6 @@ func NewReservationHandler(service *service.ReservationService) *ReservationHand
 	return &ReservationHandler{service: service}
 }
 
-// GetFacilityAvailability returns availability for a facility
 func (h *ReservationHandler) GetFacilityAvailability(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	facilityID, err := strconv.ParseInt(vars["id"], 10, 64)
@@ -31,7 +30,6 @@ func (h *ReservationHandler) GetFacilityAvailability(w http.ResponseWriter, r *h
 		return
 	}
 
-	// Get query parameters for date range
 	startDateStr := r.URL.Query().Get("start_date")
 	endDateStr := r.URL.Query().Get("end_date")
 
@@ -75,9 +73,7 @@ func (h *ReservationHandler) GetFacilityAvailability(w http.ResponseWriter, r *h
 	json.NewEncoder(w).Encode(availability)
 }
 
-// CreateReservation creates a new reservation
 func (h *ReservationHandler) CreateReservation(w http.ResponseWriter, r *http.Request) {
-	// Get user ID from context
 	claims, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
 		w.Header().Set("Content-Type", "application/json")
@@ -108,7 +104,6 @@ func (h *ReservationHandler) CreateReservation(w http.ResponseWriter, r *http.Re
 	json.NewEncoder(w).Encode(reservation)
 }
 
-// GetUserReservations retrieves all reservations for the authenticated user
 func (h *ReservationHandler) GetUserReservations(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
@@ -130,7 +125,6 @@ func (h *ReservationHandler) GetUserReservations(w http.ResponseWriter, r *http.
 	json.NewEncoder(w).Encode(reservations)
 }
 
-// CancelReservation cancels a reservation
 func (h *ReservationHandler) CancelReservation(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {

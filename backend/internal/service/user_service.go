@@ -122,8 +122,18 @@ func (s *UserService) GetUserByEmail(email string) (*model.User, error) {
 	return s.repo.GetUserByEmail(email)
 }
 
-func (s *UserService) GetUserByID(id int64) (*model.User, error) {
-	return s.repo.GetUserByID(id)
+func (s *UserService) GetUserByID(userID int64) (*model.User, error) {
+	return s.repo.GetUserByID(userID)
+}
+
+// GetGoogleTokens retrieves Google OAuth tokens for a user
+func (s *UserService) GetGoogleTokens(userID int64) (accessToken, refreshToken string, expiry time.Time, err error) {
+	return s.repo.GetGoogleTokens(userID)
+}
+
+// HasAuthIdentity checks if a user has a specific auth identity provider
+func (s *UserService) HasAuthIdentity(userID int64, provider string) (bool, error) {
+	return s.repo.HasAuthIdentity(userID, provider)
 }
 
 func (s *UserService) ChangePassword(userID int64, oldPassword, newPassword string) error {
@@ -342,4 +352,14 @@ func (s *UserService) LinkGoogleAccount(email, password, googleID string, userAg
 func (s *UserService) UpdateGoogleCalendarTokens(userID int64, accessToken, refreshToken string, expiry time.Time) error {
 	// Update the Google auth identity with calendar tokens
 	return s.repo.UpdateGoogleCalendarTokens(userID, accessToken, refreshToken, expiry)
+}
+
+// GetRoleIDByName retrieves role ID by role name
+func (s *UserService) GetRoleIDByName(roleName string) (int64, error) {
+	return s.repo.GetRoleIDByName(roleName)
+}
+
+// UpdateUserRole updates a user's role
+func (s *UserService) UpdateUserRole(userID int64, roleID int64) error {
+	return s.repo.UpdateUserRole(userID, roleID)
 }

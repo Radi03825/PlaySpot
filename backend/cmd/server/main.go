@@ -11,18 +11,16 @@ import (
 
 	"github.com/Radi03825/PlaySpot/internal/repository"
 	"github.com/Radi03825/PlaySpot/internal/service"
+	"github.com/Radi03825/PlaySpot/internal/service/storage"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
 
 func main() {
-	// Try to load .env from multiple locations
 	err := godotenv.Load()
 	if err != nil {
-		// Try loading from parent directory (if running from backend/)
 		err = godotenv.Load(filepath.Join("..", ".env"))
 		if err != nil {
-			// Try loading from project root (if running from anywhere else)
 			err = godotenv.Load(filepath.Join("..", "..", ".env"))
 			if err != nil {
 				fmt.Println("Warning: Could not load .env file, using environment variables")
@@ -41,9 +39,16 @@ func main() {
 	facilityRepo := repository.NewFacilityRepository(db)
 	metadataRepo := repository.NewMetadataRepository(db)
 	reservationRepo := repository.NewReservationRepository(db)
+	imageRepo := repository.NewImageRepository(db)
 
 	// Create email service
 	emailService := service.NewEmailService()
+
+	// Create image storage provider
+	imageStorage := storage.NewCloudinaryStorage()
+
+	// Create Image service
+	imageService := service.NewImageService(imageStorage, imageRepo)
 
 	// Create Google Calendar service
 	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
@@ -53,26 +58,33 @@ func main() {
 	}
 	googleCalendarService := service.NewGoogleCalendarService(googleClientID, googleClientSecret)
 
-	// Create token service first as it's needed by user service
+	// Create token service
 	tokenService := service.NewTokenService(tokenRepo, userRepo)
 
-	// Create user service with token service and email service
+	// Create user service
 	userService := service.NewUserService(userRepo, tokenService, emailService)
 
-	// Create sport complex and facility services
-	sportComplexService := service.NewSportComplexService(sportComplexRepo, facilityRepo, userRepo)
-	facilityService := service.NewFacilityService(facilityRepo, userRepo)
-	reservationService := service.NewReservationService(reservationRepo, userRepo, facilityRepo, googleCalendarService)
+	// Create facility service
+	facilityService := service.NewFacilityService(facilityRepo, userService, imageService)
+
+	// Create sport complex service
+	sportComplexService := service.NewSportComplexService(sportComplexRepo, facilityService, userService, imageService)
+
+	// Set the sport complex service on facility service
+	facilityService.SetSportComplexService(sportComplexService)
+
+	// Create reservation service (needs userService, facilityService, and googleCalendarService)
+	reservationService := service.NewReservationService(reservationRepo, userService, facilityService, googleCalendarService)
 
 	// Create handlers
 	userHandler := handler.NewUserHandler(userService, tokenService, googleCalendarService)
 	sportComplexHandler := handler.NewSportComplexHandler(sportComplexService)
 	facilityHandler := handler.NewFacilityHandler(facilityService, metadataRepo)
 	reservationHandler := handler.NewReservationHandler(reservationService)
+	imageHandler := handler.NewImageHandler(imageService)
 
-	router := http2.NewRouter(userHandler, facilityHandler, sportComplexHandler, reservationHandler)
+	router := http2.NewRouter(userHandler, facilityHandler, sportComplexHandler, reservationHandler, imageHandler)
 
-	// Get frontend URL from environment or use default
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {
 		frontendURL = "http://localhost:5173"
@@ -85,7 +97,6 @@ func main() {
 		AllowCredentials: true,
 	}).Handler(router)
 
-	// Get server port from environment or use default
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
 		port = "8081"

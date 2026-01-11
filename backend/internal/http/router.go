@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.FacilityHandler, sportComplexHandler *handler.SportComplexHandler, reservationHandler *handler.ReservationHandler) *mux.Router {
+func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.FacilityHandler, sportComplexHandler *handler.SportComplexHandler, reservationHandler *handler.ReservationHandler, imageHandler *handler.ImageHandler) *mux.Router {
 	router := mux.NewRouter()
 	api := router.PathPrefix("/api").Subrouter()
 
@@ -37,9 +37,16 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	api.HandleFunc("/sport-complexes/{id:[0-9]+}", sportComplexHandler.GetSportComplexByID).Methods("GET")
 	api.HandleFunc("/sport-complexes/{id:[0-9]+}/facilities", facilityHandler.GetFacilitiesByComplexID).Methods("GET")
 
+	// Public image routes (allow viewing images without authentication)
+	api.HandleFunc("/images/{entityType}/{entityId:[0-9]+}", imageHandler.GetEntityImages).Methods("GET")
+
 	// Protected routes (require authentication)
 	protected := api.PathPrefix("").Subrouter()
 	protected.Use(middleware.JWTAuthMiddleware)
+
+	// Image upload routes (authenticated users can upload images)
+	protected.HandleFunc("/upload/image", imageHandler.UploadImage).Methods("POST")
+	protected.HandleFunc("/upload/images", imageHandler.UploadMultipleImages).Methods("POST")
 
 	// User routes
 	protected.HandleFunc("/profile", userHandler.GetProfile).Methods("GET")

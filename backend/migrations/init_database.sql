@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS users (
     is_email_verified BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-CREATE TABLE user_auth_identities (
+CREATE TABLE IF NOT EXISTS user_auth_identities (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     provider VARCHAR(50) NOT NULL,
@@ -112,8 +112,10 @@ CREATE TABLE IF NOT EXISTS facilities (
     category_id BIGINT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
     surface_id BIGINT NOT NULL REFERENCES surfaces(id) ON DELETE CASCADE,
     environment_id BIGINT NOT NULL REFERENCES environments(id) ON DELETE CASCADE,
-    description TEXT,
+    city VARCHAR(100) NOT NULL,
+    address TEXT NOT NULL,
     capacity INTEGER,
+    description TEXT,
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
@@ -149,3 +151,26 @@ CREATE TABLE IF NOT EXISTS facility_reservations (
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     google_calendar_event_id VARCHAR(255)
 );
+
+-- 13. CREATE IMAGES TABLE
+CREATE TABLE IF NOT EXISTS images (
+    id BIGSERIAL PRIMARY KEY,
+    url TEXT NOT NULL,
+    storage_id TEXT,
+    storage_provider VARCHAR(50) DEFAULT 'cloudinary',
+    image_type VARCHAR(50) NOT NULL CHECK (image_type IN ('sport_complex', 'facility', 'user_profile')),
+    reference_id BIGINT NOT NULL,
+    owner_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    uploaded_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Create partial unique index for storage_id (only when storage_id is NOT NULL)
+-- This prevents duplicate storage IDs while allowing multiple NULL values
+CREATE UNIQUE INDEX IF NOT EXISTS idx_images_unique_storage 
+ON images(storage_provider, storage_id) 
+WHERE storage_id IS NOT NULL;
+
+-- Create indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_images_reference ON images(image_type, reference_id);
+CREATE INDEX IF NOT EXISTS idx_images_owner ON images(owner_id);

@@ -15,14 +15,14 @@ func NewFacilityRepository(db *sql.DB) *FacilityRepository {
 	return &FacilityRepository{db: db}
 }
 
-func (r *FacilityRepository) CreateFacility(name string, sportComplexID *int64, categoryID, surfaceID, environmentID int64, description string, capacity int, managerID int64) (*model.Facility, error) {
+func (r *FacilityRepository) CreateFacility(name string, sportComplexID *int64, categoryID, surfaceID, environmentID int64, city, address, description string, capacity int, managerID int64) (*model.Facility, error) {
 	query := `
-		INSERT INTO facilities (name, sport_complex_id, category_id, surface_id, environment_id, description, capacity, manager_id, is_verified, is_active)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false, false)
+		INSERT INTO facilities (name, sport_complex_id, category_id, surface_id, environment_id, city, address, description, capacity, manager_id, is_verified, is_active)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false, false)
 		RETURNING id
 	`
 	var id int64
-	err := r.db.QueryRow(query, name, sportComplexID, categoryID, surfaceID, environmentID, description, capacity, managerID).Scan(&id)
+	err := r.db.QueryRow(query, name, sportComplexID, categoryID, surfaceID, environmentID, city, address, description, capacity, managerID).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -34,6 +34,8 @@ func (r *FacilityRepository) CreateFacility(name string, sportComplexID *int64, 
 		CategoryID:     categoryID,
 		SurfaceID:      surfaceID,
 		EnvironmentID:  environmentID,
+		City:           city,
+		Address:        address,
 		Description:    description,
 		Capacity:       capacity,
 		IsVerified:     false,
@@ -45,11 +47,10 @@ func (r *FacilityRepository) GetAllFacilities() ([]model.FacilityDetails, error)
 	query := `
 		SELECT 
 			f.id, f.name, f.sport_complex_id, f.category_id, f.surface_id, f.environment_id, 
-			f.description, f.capacity, f.is_verified, f.is_active,
+			f.city, f.address, f.description, f.capacity, f.is_verified, f.is_active,
 			c.name as category_name, s.name as surface_name, e.name as environment_name,
 			sp.name as sport_name,
-			COALESCE(sc.name, '') as sport_complex_name,
-			sc.city, sc.address
+			COALESCE(sc.name, '') as sport_complex_name
 		FROM facilities f
 		JOIN categories c ON f.category_id = c.id
 		JOIN surfaces s ON f.surface_id = s.id
@@ -70,11 +71,10 @@ func (r *FacilityRepository) GetAllFacilities() ([]model.FacilityDetails, error)
 		var facility model.FacilityDetails
 		err := rows.Scan(
 			&facility.ID, &facility.Name, &facility.SportComplexID, &facility.CategoryID,
-			&facility.SurfaceID, &facility.EnvironmentID, &facility.Description, &facility.Capacity,
-			&facility.IsVerified, &facility.IsActive,
+			&facility.SurfaceID, &facility.EnvironmentID, &facility.City, &facility.Address,
+			&facility.Description, &facility.Capacity, &facility.IsVerified, &facility.IsActive,
 			&facility.CategoryName, &facility.SurfaceName, &facility.EnvironmentName,
 			&facility.SportName, &facility.SportComplexName,
-			&facility.City, &facility.Address,
 		)
 		if err != nil {
 			return nil, err
@@ -89,11 +89,10 @@ func (r *FacilityRepository) SearchFacilities(params model.FacilitySearchParams)
 	query := `
 		SELECT 
 			f.id, f.name, f.sport_complex_id, f.category_id, f.surface_id, f.environment_id, 
-			f.description, f.capacity, f.is_verified, f.is_active,
+			f.city, f.address, f.description, f.capacity, f.is_verified, f.is_active,
 			c.name as category_name, s.name as surface_name, e.name as environment_name,
 			sp.name as sport_name,
-			COALESCE(sc.name, '') as sport_complex_name,
-			sc.city, sc.address
+			COALESCE(sc.name, '') as sport_complex_name
 		FROM facilities f
 		JOIN categories c ON f.category_id = c.id
 		JOIN surfaces s ON f.surface_id = s.id
@@ -109,7 +108,7 @@ func (r *FacilityRepository) SearchFacilities(params model.FacilitySearchParams)
 	// Add filters
 	if params.City != "" {
 		argCount++
-		query += ` AND LOWER(sc.city) = LOWER($` + fmt.Sprintf("%d", argCount) + `)`
+		query += ` AND LOWER(f.city) = LOWER($` + fmt.Sprintf("%d", argCount) + `)`
 		args = append(args, params.City)
 	}
 
@@ -178,11 +177,10 @@ func (r *FacilityRepository) SearchFacilities(params model.FacilitySearchParams)
 		var facility model.FacilityDetails
 		err := rows.Scan(
 			&facility.ID, &facility.Name, &facility.SportComplexID, &facility.CategoryID,
-			&facility.SurfaceID, &facility.EnvironmentID, &facility.Description, &facility.Capacity,
-			&facility.IsVerified, &facility.IsActive,
+			&facility.SurfaceID, &facility.EnvironmentID, &facility.City, &facility.Address,
+			&facility.Description, &facility.Capacity, &facility.IsVerified, &facility.IsActive,
 			&facility.CategoryName, &facility.SurfaceName, &facility.EnvironmentName,
 			&facility.SportName, &facility.SportComplexName,
-			&facility.City, &facility.Address,
 		)
 		if err != nil {
 			return nil, err
@@ -197,11 +195,10 @@ func (r *FacilityRepository) GetFacilityByID(id int64) (*model.FacilityDetails, 
 	query := `
 		SELECT 
 			f.id, f.name, f.sport_complex_id, f.category_id, f.surface_id, f.environment_id, 
-			f.description, f.capacity, f.is_verified, f.is_active,
+			f.city, f.address, f.description, f.capacity, f.is_verified, f.is_active,
 			c.name as category_name, s.name as surface_name, e.name as environment_name,
 			sp.name as sport_name,
-			COALESCE(sc.name, '') as sport_complex_name,
-			sc.city, sc.address
+			COALESCE(sc.name, '') as sport_complex_name
 		FROM facilities f
 		JOIN categories c ON f.category_id = c.id
 		JOIN surfaces s ON f.surface_id = s.id
@@ -213,11 +210,10 @@ func (r *FacilityRepository) GetFacilityByID(id int64) (*model.FacilityDetails, 
 	var facility model.FacilityDetails
 	err := r.db.QueryRow(query, id).Scan(
 		&facility.ID, &facility.Name, &facility.SportComplexID, &facility.CategoryID,
-		&facility.SurfaceID, &facility.EnvironmentID, &facility.Description, &facility.Capacity,
-		&facility.IsVerified, &facility.IsActive,
+		&facility.SurfaceID, &facility.EnvironmentID, &facility.City, &facility.Address,
+		&facility.Description, &facility.Capacity, &facility.IsVerified, &facility.IsActive,
 		&facility.CategoryName, &facility.SurfaceName, &facility.EnvironmentName,
 		&facility.SportName, &facility.SportComplexName,
-		&facility.City, &facility.Address,
 	)
 	if err != nil {
 		return nil, err
@@ -230,11 +226,10 @@ func (r *FacilityRepository) GetFacilitiesByComplexID(complexID int64) ([]model.
 	query := `
 		SELECT 
 			f.id, f.name, f.sport_complex_id, f.category_id, f.surface_id, f.environment_id, 
-			f.description, f.capacity, f.is_verified, f.is_active,
+			f.city, f.address, f.description, f.capacity, f.is_verified, f.is_active,
 			c.name as category_name, s.name as surface_name, e.name as environment_name,
 			sp.name as sport_name,
-			COALESCE(sc.name, '') as sport_complex_name,
-			sc.city, sc.address
+			COALESCE(sc.name, '') as sport_complex_name
 		FROM facilities f
 		JOIN categories c ON f.category_id = c.id
 		JOIN surfaces s ON f.surface_id = s.id
@@ -255,11 +250,10 @@ func (r *FacilityRepository) GetFacilitiesByComplexID(complexID int64) ([]model.
 		var facility model.FacilityDetails
 		err := rows.Scan(
 			&facility.ID, &facility.Name, &facility.SportComplexID, &facility.CategoryID,
-			&facility.SurfaceID, &facility.EnvironmentID, &facility.Description, &facility.Capacity,
-			&facility.IsVerified, &facility.IsActive,
+			&facility.SurfaceID, &facility.EnvironmentID, &facility.City, &facility.Address,
+			&facility.Description, &facility.Capacity, &facility.IsVerified, &facility.IsActive,
 			&facility.CategoryName, &facility.SurfaceName, &facility.EnvironmentName,
 			&facility.SportName, &facility.SportComplexName,
-			&facility.City, &facility.Address,
 		)
 		if err != nil {
 			return nil, err
@@ -274,11 +268,10 @@ func (r *FacilityRepository) GetFacilitiesByManagerID(managerID int64) ([]model.
 	query := `
 		SELECT 
 			f.id, f.name, f.sport_complex_id, f.category_id, f.surface_id, f.environment_id, 
-			f.description, f.capacity, f.is_verified, f.is_active,
+			f.city, f.address, f.description, f.capacity, f.is_verified, f.is_active,
 			c.name as category_name, s.name as surface_name, e.name as environment_name,
 			sp.name as sport_name,
-			COALESCE(sc.name, '') as sport_complex_name,
-			sc.city, sc.address
+			COALESCE(sc.name, '') as sport_complex_name
 		FROM facilities f
 		JOIN categories c ON f.category_id = c.id
 		JOIN surfaces s ON f.surface_id = s.id
@@ -299,11 +292,10 @@ func (r *FacilityRepository) GetFacilitiesByManagerID(managerID int64) ([]model.
 		var facility model.FacilityDetails
 		err := rows.Scan(
 			&facility.ID, &facility.Name, &facility.SportComplexID, &facility.CategoryID,
-			&facility.SurfaceID, &facility.EnvironmentID, &facility.Description, &facility.Capacity,
-			&facility.IsVerified, &facility.IsActive,
+			&facility.SurfaceID, &facility.EnvironmentID, &facility.City, &facility.Address,
+			&facility.Description, &facility.Capacity, &facility.IsVerified, &facility.IsActive,
 			&facility.CategoryName, &facility.SurfaceName, &facility.EnvironmentName,
 			&facility.SportName, &facility.SportComplexName,
-			&facility.City, &facility.Address,
 		)
 		if err != nil {
 			return nil, err
@@ -318,11 +310,10 @@ func (r *FacilityRepository) GetPendingFacilities() ([]model.FacilityDetails, er
 	query := `
 		SELECT 
 			f.id, f.name, f.sport_complex_id, f.category_id, f.surface_id, f.environment_id, 
-			f.description, f.capacity, f.is_verified, f.is_active,
+			f.city, f.address, f.description, f.capacity, f.is_verified, f.is_active,
 			c.name as category_name, s.name as surface_name, e.name as environment_name,
 			sp.name as sport_name,
-			COALESCE(sc.name, '') as sport_complex_name,
-			sc.city, sc.address
+			COALESCE(sc.name, '') as sport_complex_name
 		FROM facilities f
 		JOIN categories c ON f.category_id = c.id
 		JOIN surfaces s ON f.surface_id = s.id
@@ -343,11 +334,10 @@ func (r *FacilityRepository) GetPendingFacilities() ([]model.FacilityDetails, er
 		var facility model.FacilityDetails
 		err := rows.Scan(
 			&facility.ID, &facility.Name, &facility.SportComplexID, &facility.CategoryID,
-			&facility.SurfaceID, &facility.EnvironmentID, &facility.Description, &facility.Capacity,
-			&facility.IsVerified, &facility.IsActive,
+			&facility.SurfaceID, &facility.EnvironmentID, &facility.City, &facility.Address,
+			&facility.Description, &facility.Capacity, &facility.IsVerified, &facility.IsActive,
 			&facility.CategoryName, &facility.SurfaceName, &facility.EnvironmentName,
 			&facility.SportName, &facility.SportComplexName,
-			&facility.City, &facility.Address,
 		)
 		if err != nil {
 			return nil, err
