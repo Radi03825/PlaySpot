@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { createSportComplex, getCategories, getSports, getSurfaces, getEnvironments } from "../services/api";
 import type { Category, Sport, Surface, Environment } from "../types";
 import { ImageUpload } from "./ImageUpload";
+import "../styles/CreateSportComplexForm.css";
 
 interface CreateSportComplexFormProps {
     onSuccess?: (message: string) => void;
@@ -33,7 +34,6 @@ export default function CreateSportComplexForm({
             environment_id: number;
             description: string;
             capacity: number;
-            image_urls: string[];
             isExpanded: boolean;
         }>
     });
@@ -81,7 +81,6 @@ export default function CreateSportComplexForm({
                     environment_id: environments[0]?.id || 0,
                     description: "",
                     capacity: 0,
-                    image_urls: [],
                     isExpanded: true
                 }
             ]
@@ -126,27 +125,13 @@ export default function CreateSportComplexForm({
                 }
                 setLoading(false);
                 return;
-            }
-
-            if (imageUrls.length === 0) {
+            }            if (imageUrls.length === 0) {
                 if (onError) {
                     onError("Please upload at least one image for the sport complex");
                 }
                 setLoading(false);
                 return;
-            }
-
-            // Validate that each facility has at least one image
-            const facilitiesWithoutImages = complexForm.facilities.filter(f => !f.image_urls || f.image_urls.length === 0);
-            if (facilitiesWithoutImages.length > 0) {
-                if (onError) {
-                    onError("Each facility must have at least one image");
-                }
-                setLoading(false);
-                return;
-            }
-
-            await createSportComplex({
+            }            await createSportComplex({
                 name: complexForm.name,
                 address: complexForm.address,
                 city: complexForm.city,
@@ -159,7 +144,7 @@ export default function CreateSportComplexForm({
                     environment_id: f.environment_id,
                     description: f.description,
                     capacity: f.capacity,
-                    image_urls: f.image_urls
+                    image_urls: []
                 }))
             });
 
@@ -213,13 +198,15 @@ export default function CreateSportComplexForm({
                 value={complexForm.description}
                 onChange={(e) => setComplexForm({ ...complexForm, description: e.target.value })}
                 required
-            />
-
-            <ImageUpload 
-                onImagesUploaded={setImageUrls} 
-                maxImages={5}
-                folder="sport-complexes"
-            />
+            />            <div className="complex-images-section">
+                <label className="section-label">Sport Complex Images *</label>
+                <ImageUpload 
+                    onImagesUploaded={setImageUrls} 
+                    maxImages={5}
+                    folder="sport-complexes"
+                    title="Images for Sport Complex"
+                />
+            </div>
 
             <div className="facilities-section">
                 <div className="section-header">
@@ -237,16 +224,12 @@ export default function CreateSportComplexForm({
                     <p className="empty-message">Click "+ Add Facility" to add facilities to this complex</p>
                 )}                <div className="facilities-horizontal-list">
                     {complexForm.facilities.map((facility, index) => (
-                        <div key={index} className={`facility-form-card ${!facility.isExpanded ? 'collapsed' : ''}`}>
-                            <div className="facility-header">
+                        <div key={index} className={`facility-form-card ${!facility.isExpanded ? 'collapsed' : ''}`}>                            <div className="facility-header">
                                 <h4 onClick={() => toggleFacilityExpanded(index)} style={{ cursor: 'pointer', flex: 1 }}>
                                     <span className="collapse-icon">{facility.isExpanded ? '▼' : '▶'}</span>
                                     <span style={{ flex: 1, minWidth: 0 }}>
                                         Facility {index + 1}{facility.name && `: ${facility.name}`}
                                     </span>
-                                    {facility.image_urls.length > 0 && (
-                                        <span className="image-count">({facility.image_urls.length})</span>
-                                    )}
                                 </h4>
                                 <button
                                     type="button"
@@ -256,86 +239,79 @@ export default function CreateSportComplexForm({
                                 >
                                     ×
                                 </button>
-                            </div>
-
-                            {facility.isExpanded && (
+                            </div>                            {facility.isExpanded && (
                                 <div className="facility-content">
-                                    <input
-                                        type="text"
-                                        placeholder="Facility Name"
-                                        value={facility.name}
-                                        onChange={(e) => updateFacilityInComplex(index, "name", e.target.value)}
-                                        required
-                                    />
-
-                                    <select
-                                        value={facility.sport_id}
-                                        onChange={(e) => updateFacilityInComplex(index, "sport_id", parseInt(e.target.value))}
-                                        required
-                                    >
-                                        <option value={0}>Select Sport</option>
-                                        {sports.map(sport => (
-                                            <option key={sport.id} value={sport.id}>{sport.name}</option>
-                                        ))}
-                                    </select>
-
-                                    <select
-                                        value={facility.category_id}
-                                        onChange={(e) => updateFacilityInComplex(index, "category_id", parseInt(e.target.value))}
-                                        required
-                                        disabled={!facility.sport_id}
-                                    >
-                                        <option value={0}>Select Category</option>
-                                        {getFilteredCategories(facility.sport_id).map(cat => (
-                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                        ))}
-                                    </select>
-
-                                    <select
-                                        value={facility.surface_id}
-                                        onChange={(e) => updateFacilityInComplex(index, "surface_id", parseInt(e.target.value))}
-                                        required
-                                    >
-                                        <option value={0}>Select Surface</option>
-                                        {surfaces.map(surf => (
-                                            <option key={surf.id} value={surf.id}>{surf.name}</option>
-                                        ))}
-                                    </select>
-
-                                    <select
-                                        value={facility.environment_id}
-                                        onChange={(e) => updateFacilityInComplex(index, "environment_id", parseInt(e.target.value))}
-                                        required
-                                    >
-                                        <option value={0}>Select Environment</option>
-                                        {environments.map(env => (
-                                            <option key={env.id} value={env.id}>{env.name}</option>
-                                        ))}
-                                    </select>
-
-                                    <textarea
-                                        placeholder="Description"
-                                        value={facility.description}
-                                        onChange={(e) => updateFacilityInComplex(index, "description", e.target.value)}
-                                        required
-                                    />
-
-                                    <input
-                                        type="number"
-                                        placeholder="Capacity"
-                                        value={facility.capacity || ""}
-                                        onChange={(e) => updateFacilityInComplex(index, "capacity", parseInt(e.target.value))}
-                                        required
-                                        min="1"
-                                    />
-
-                                    <div className="facility-image-upload">
-                                        <label className="image-upload-label">Facility Images *</label>
-                                        <ImageUpload
-                                            onImagesUploaded={(urls) => updateFacilityInComplex(index, "image_urls", urls)}
-                                            maxImages={5}
-                                            folder={`facilities/facility-${index}`}
+                                    <div className="facility-left-column">
+                                        <input
+                                            type="text"
+                                            placeholder="Facility Name"
+                                            value={facility.name}
+                                            onChange={(e) => updateFacilityInComplex(index, "name", e.target.value)}
+                                            required
                                         />
+
+                                        <textarea
+                                            placeholder="Description"
+                                            value={facility.description}
+                                            onChange={(e) => updateFacilityInComplex(index, "description", e.target.value)}
+                                            required
+                                        />
+
+                                        <input
+                                            type="number"
+                                            placeholder="Capacity"
+                                            value={facility.capacity || ""}
+                                            onChange={(e) => updateFacilityInComplex(index, "capacity", parseInt(e.target.value))}
+                                            required
+                                            min="1"
+                                        />
+                                    </div>
+
+                                    <div className="facility-right-column">
+                                        <select
+                                            value={facility.sport_id}
+                                            onChange={(e) => updateFacilityInComplex(index, "sport_id", parseInt(e.target.value))}
+                                            required
+                                        >
+                                            <option value={0}>Select Sport</option>
+                                            {sports.map(sport => (
+                                                <option key={sport.id} value={sport.id}>{sport.name}</option>
+                                            ))}
+                                        </select>
+
+                                        <select
+                                            value={facility.category_id}
+                                            onChange={(e) => updateFacilityInComplex(index, "category_id", parseInt(e.target.value))}
+                                            required
+                                            disabled={!facility.sport_id}
+                                        >
+                                            <option value={0}>Select Category</option>
+                                            {getFilteredCategories(facility.sport_id).map(cat => (
+                                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                            ))}
+                                        </select>
+
+                                        <select
+                                            value={facility.surface_id}
+                                            onChange={(e) => updateFacilityInComplex(index, "surface_id", parseInt(e.target.value))}
+                                            required
+                                        >
+                                            <option value={0}>Select Surface</option>
+                                            {surfaces.map(surf => (
+                                                <option key={surf.id} value={surf.id}>{surf.name}</option>
+                                            ))}
+                                        </select>
+
+                                        <select
+                                            value={facility.environment_id}
+                                            onChange={(e) => updateFacilityInComplex(index, "environment_id", parseInt(e.target.value))}
+                                            required
+                                        >
+                                            <option value={0}>Select Environment</option>
+                                            {environments.map(env => (
+                                                <option key={env.id} value={env.id}>{env.name}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
                             )}

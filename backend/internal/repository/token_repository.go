@@ -32,7 +32,6 @@ func (r *TokenRepository) CreateToken(token *model.Token) error {
 	).Scan(&token.ID)
 }
 
-// GetTokenByValue retrieves a token by its value and type
 func (r *TokenRepository) GetTokenByValue(tokenValue string, tokenType model.TokenType) (*model.Token, error) {
 	query := `SELECT id, user_id, token, token_type, expires_at, created_at, used, revoked, user_agent
 	          FROM tokens
@@ -116,14 +115,12 @@ func (r *TokenRepository) GetTokenByUserIDAndAgent(userID int64, userAgent strin
 	return &token, nil
 }
 
-// MarkTokenAsUsed marks a token as used (for verification/reset tokens)
 func (r *TokenRepository) MarkTokenAsUsed(tokenID int64) error {
 	query := `UPDATE tokens SET used = TRUE WHERE id = $1`
 	_, err := r.db.Exec(query, tokenID)
 	return err
 }
 
-// RevokeToken revokes a specific token by its value (for refresh tokens)
 func (r *TokenRepository) RevokeToken(tokenValue string) error {
 	query := `UPDATE tokens SET revoked = TRUE WHERE token = $1`
 	_, err := r.db.Exec(query, tokenValue)
@@ -182,7 +179,6 @@ func (r *TokenRepository) GetUserTokensByType(userID int64, tokenType model.Toke
 	return tokens, nil
 }
 
-// GetUserActiveTokens returns all active refresh tokens for a user
 func (r *TokenRepository) GetUserActiveTokens(userID int64) ([]model.Token, error) {
 	return r.GetUserTokensByType(userID, model.TokenTypeRefresh)
 }

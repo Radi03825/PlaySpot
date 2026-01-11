@@ -313,13 +313,16 @@ func (r *FacilityRepository) GetPendingFacilities() ([]model.FacilityDetails, er
 			f.city, f.address, f.description, f.capacity, f.is_verified, f.is_active,
 			c.name as category_name, s.name as surface_name, e.name as environment_name,
 			sp.name as sport_name,
-			COALESCE(sc.name, '') as sport_complex_name
+			COALESCE(sc.name, '') as sport_complex_name,
+			u.name as manager_name,
+			u.email as manager_email
 		FROM facilities f
 		JOIN categories c ON f.category_id = c.id
 		JOIN surfaces s ON f.surface_id = s.id
 		JOIN environments e ON f.environment_id = e.id
 		JOIN sports sp ON c.sport_id = sp.id
 		LEFT JOIN sport_complexes sc ON f.sport_complex_id = sc.id
+		JOIN users u ON f.manager_id = u.id
 		WHERE f.is_verified = false OR f.is_active = false
 		ORDER BY f.id DESC
 	`
@@ -338,6 +341,7 @@ func (r *FacilityRepository) GetPendingFacilities() ([]model.FacilityDetails, er
 			&facility.Description, &facility.Capacity, &facility.IsVerified, &facility.IsActive,
 			&facility.CategoryName, &facility.SurfaceName, &facility.EnvironmentName,
 			&facility.SportName, &facility.SportComplexName,
+			&facility.ManagerName, &facility.ManagerEmail,
 		)
 		if err != nil {
 			return nil, err

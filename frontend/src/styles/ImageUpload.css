@@ -1,0 +1,146 @@
+.image-upload {
+  width: 100%;
+  margin: 20px 0;
+}
+
+.image-upload-container {
+  width: 100%;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #fafafa;
+  border: 1px dashed #ccc;
+}
+
+.image-upload-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 15px;
+  padding: 8px 12px;
+  background-color: #fff;
+  border-radius: 6px;
+  border-left: 4px solid #007bff;
+}
+
+.upload-section {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.select-images-btn,
+.upload-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.select-images-btn {
+  background-color: #007bff;
+  color: white;
+}
+
+.select-images-btn:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.upload-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.upload-btn:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.select-images-btn:disabled,
+.upload-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #dc3545;
+  padding: 10px;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.preview-grid,
+.uploaded-section {
+  margin-top: 20px;
+}
+
+.preview-grid h4,
+.uploaded-section h4 {
+  margin-bottom: 10px;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+.image-preview {
+  position: relative;
+  width: 100%;
+  padding-top: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.image-preview img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(220, 53, 69, 0.9);
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s;
+  z-index: 2;
+}
+
+.remove-btn:hover:not(:disabled) {
+  background-color: rgba(200, 35, 51, 1);
+}
+
+.primary-badge {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  background-color: rgba(40, 167, 69, 0.95);
+  color: white;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 8px;
+  font-weight: bold;
+  pointer-events: none;
+  z-index: 1;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}

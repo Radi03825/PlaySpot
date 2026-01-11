@@ -17,11 +17,14 @@ type Facility struct {
 
 type FacilityDetails struct {
 	Facility
-	CategoryName     string `json:"category_name"`
-	SurfaceName      string `json:"surface_name"`
-	EnvironmentName  string `json:"environment_name"`
-	SportName        string `json:"sport_name"`
-	SportComplexName string `json:"sport_complex_name,omitempty"`
+	CategoryName     string  `json:"category_name"`
+	SurfaceName      string  `json:"surface_name"`
+	EnvironmentName  string  `json:"environment_name"`
+	SportName        string  `json:"sport_name"`
+	SportComplexName string  `json:"sport_complex_name,omitempty"`
+	ManagerName      string  `json:"manager_name,omitempty"`
+	ManagerEmail     string  `json:"manager_email,omitempty"`
+	Images           []Image `json:"images,omitempty"`
 }
 
 type FacilitySearchParams struct {

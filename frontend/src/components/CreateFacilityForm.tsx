@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createFacility, getCategories, getSports, getSurfaces, getEnvironments, getMySportComplexes } from "../services/api";
 import type { Category, Sport, Surface, Environment, SportComplex } from "../types";
 import { ImageUpload } from "./ImageUpload";
+import type { ImageUploadRef } from "./ImageUpload";
 
 interface CreateFacilityFormProps {
     onSuccess?: (message: string) => void;
@@ -19,9 +20,11 @@ export default function CreateFacilityForm({
     const [categories, setCategories] = useState<Category[]>([]);
     const [sports, setSports] = useState<Sport[]>([]);
     const [surfaces, setSurfaces] = useState<Surface[]>([]);
-    const [environments, setEnvironments] = useState<Environment[]>([]);
-    const [mySportComplexes, setMySportComplexes] = useState<SportComplex[]>([]);
-    const [imageUrls, setImageUrls] = useState<string[]>([]);    const [facilityForm, setFacilityForm] = useState({
+    const [environments, setEnvironments] = useState<Environment[]>([]);    const [mySportComplexes, setMySportComplexes] = useState<SportComplex[]>([]);
+    const [imageUrls, setImageUrls] = useState<string[]>([]);
+    const imageUploadRef = useRef<ImageUploadRef>(null);
+    
+    const [facilityForm, setFacilityForm] = useState({
         name: "",
         sport_complex_id: null as number | null,
         sport_id: 0,
@@ -84,7 +87,29 @@ export default function CreateFacilityForm({
         e.preventDefault();
         setLoading(true);
 
-        try {            
+        try {
+            // Upload images if any are selected but not yet uploaded
+            let finalImageUrls = imageUrls;
+            if (imageUploadRef.current) {
+                if (imageUploadRef.current.hasSelectedFiles() && !imageUploadRef.current.hasUploadedImages()) {
+                    try {
+                        finalImageUrls = await imageUploadRef.current.uploadImages();
+                    } catch (err) {
+                        if (onError) {
+                            onError((err as Error).message || "Failed to upload images");
+                        }
+                        setLoading(false);
+                        return;
+                    }
+                } else if (!imageUploadRef.current.hasSelectedFiles() && !imageUploadRef.current.hasUploadedImages()) {
+                    if (onError) {
+                        onError("Please select at least one image for the facility");
+                    }
+                    setLoading(false);
+                    return;
+                }
+            }
+
             await createFacility({
                 name: facilityForm.name,
                 sport_complex_id: facilityForm.sport_complex_id,
@@ -95,7 +120,7 @@ export default function CreateFacilityForm({
                 capacity: facilityForm.capacity,
                 city: facilityForm.city,
                 address: facilityForm.address,
-                image_urls: imageUrls
+                image_urls: finalImageUrls
             });
 
             if (onSuccess) {
@@ -226,13 +251,24 @@ export default function CreateFacilityForm({
                 onChange={(e) => setFacilityForm({ ...facilityForm, capacity: parseInt(e.target.value) })}
                 required
                 min="1"
-            />
-
-            <ImageUpload 
+            />            <ImageUpload 
+                ref={imageUploadRef}
                 onImagesUploaded={setImageUrls} 
                 maxImages={5}
                 folder="facilities"
             />
+
+            {imageUrls.length > 0 && (
+                <div style={{ 
+                    padding: '10px', 
+                    backgroundColor: '#d4edda', 
+                    border: '1px solid #c3e6cb', 
+                    borderRadius: '4px',
+                    marginBottom: '10px'
+                }}>
+                    ✓ {imageUrls.length} image(s) ready to submit
+                </div>
+            )}
 
             <button type="submit" className="btn-primary" disabled={loading}>
                 {loading ? "Creating..." : submitButtonText}

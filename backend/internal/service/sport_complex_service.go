@@ -85,7 +85,20 @@ func (s *SportComplexService) GetMyComplexes(managerID int64) ([]model.SportComp
 }
 
 func (s *SportComplexService) GetPendingComplexes() ([]model.SportComplex, error) {
-	return s.repo.GetPendingComplexes()
+	complexes, err := s.repo.GetPendingComplexes()
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch images for each sport complex
+	for i := range complexes {
+		images, err := s.imageService.GetImagesByReference("sport_complex", complexes[i].ID)
+		if err == nil {
+			complexes[i].Images = images
+		}
+	}
+
+	return complexes, nil
 }
 
 func (s *SportComplexService) VerifyComplex(id int64) error {

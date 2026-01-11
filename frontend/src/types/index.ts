@@ -7,6 +7,7 @@ export interface SportComplex {
     manager_id?: number;
     is_verified: boolean;
     is_active: boolean;
+    images?: Image[];
 }
 
 export interface Facility {
@@ -30,6 +31,9 @@ export interface FacilityDetails extends Facility {
     sport_complex_name?: string;
     city?: string;
     address?: string;
+    manager_name?: string;
+    manager_email?: string;
+    images?: Image[];
 }
 
 export interface Category {
@@ -122,5 +126,17 @@ export interface CreateReservationRequest {
     facility_id: number;
     start_time: string;
     end_time: string;
+}
+
+export interface Image {
+    id: number;
+    url: string;
+    storage_id?: string;
+    storage_provider: string;
+    image_type: string;
+    reference_id: number;
+    owner_id?: number;
+    is_primary: boolean;
+    uploaded_at: string;
 }
 

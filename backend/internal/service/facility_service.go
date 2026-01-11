@@ -74,7 +74,20 @@ func (s *FacilityService) GetMyFacilities(managerID int64) ([]model.FacilityDeta
 }
 
 func (s *FacilityService) GetPendingFacilities() ([]model.FacilityDetails, error) {
-	return s.repo.GetPendingFacilities()
+	facilities, err := s.repo.GetPendingFacilities()
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch images for each facility
+	for i := range facilities {
+		images, err := s.imageService.GetImagesByReference("facility", facilities[i].ID)
+		if err == nil {
+			facilities[i].Images = images
+		}
+	}
+
+	return facilities, nil
 }
 
 func (s *FacilityService) VerifyFacility(id int64) error {

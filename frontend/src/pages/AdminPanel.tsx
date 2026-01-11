@@ -8,6 +8,8 @@ import {
     toggleComplexStatus
 } from "../services/api";
 import type { FacilityDetails, SportComplex } from "../types";
+import AdminDetailModal from "../components/AdminDetailModal";
+import ImageViewerModal from "../components/ImageViewerModal";
 import "../styles/AdminPanel.css";
 
 export default function AdminPanel() {
@@ -15,8 +17,12 @@ export default function AdminPanel() {
     const [pendingFacilities, setPendingFacilities] = useState<FacilityDetails[]>([]);
     const [pendingComplexes, setPendingComplexes] = useState<SportComplex[]>([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+    const [error, setError] = useState("");    const [success, setSuccess] = useState("");
+    const [selectedItem, setSelectedItem] = useState<FacilityDetails | SportComplex | null>(null);
+    const [modalType, setModalType] = useState<"facility" | "complex" | null>(null);
+    const [viewerImages, setViewerImages] = useState<{ url: string; is_primary: boolean }[]>([]);
+    const [viewerInitialIndex, setViewerInitialIndex] = useState(0);
+    const [showImageViewer, setShowImageViewer] = useState(false);
 
     const fetchPendingItems = async () => {
         setLoading(true);
@@ -40,12 +46,12 @@ export default function AdminPanel() {
     useEffect(() => {
         fetchPendingItems();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab]);
-
-    const handleVerifyFacility = async (facilityId: number) => {
+    }, [activeTab]);    const handleVerifyFacility = async (facilityId: number) => {
         try {
             await verifyFacility(facilityId);
             setSuccess("Facility verified and activated successfully!");
+            setSelectedItem(null);
+            setModalType(null);
             fetchPendingItems();
             setTimeout(() => setSuccess(""), 3000);
         } catch (err) {
@@ -57,6 +63,8 @@ export default function AdminPanel() {
         try {
             await verifySportComplex(complexId);
             setSuccess("Sport complex verified and activated successfully!");
+            setSelectedItem(null);
+            setModalType(null);
             fetchPendingItems();
             setTimeout(() => setSuccess(""), 3000);
         } catch (err) {
@@ -68,6 +76,8 @@ export default function AdminPanel() {
         try {
             await toggleFacilityStatus(facilityId, !currentStatus);
             setSuccess(`Facility ${!currentStatus ? "activated" : "deactivated"} successfully!`);
+            setSelectedItem(null);
+            setModalType(null);
             fetchPendingItems();
             setTimeout(() => setSuccess(""), 3000);
         } catch (err) {
@@ -79,14 +89,23 @@ export default function AdminPanel() {
         try {
             await toggleComplexStatus(complexId, !currentStatus);
             setSuccess(`Complex ${!currentStatus ? "activated" : "deactivated"} successfully!`);
+            setSelectedItem(null);
+            setModalType(null);
             fetchPendingItems();
             setTimeout(() => setSuccess(""), 3000);
         } catch (err) {
             setError((err as Error).message || "Failed to toggle complex status");
         }
+    };    const openDetailModal = (item: FacilityDetails | SportComplex, type: "facility" | "complex") => {
+        setSelectedItem(item);
+        setModalType(type);
     };
 
-    return (
+    const openImageViewer = (images: { url: string; is_primary: boolean }[], initialIndex: number = 0) => {
+        setViewerImages(images);
+        setViewerInitialIndex(initialIndex);
+        setShowImageViewer(true);
+    };return (
         <div className="admin-panel-container">
             <h1>Admin Panel</h1>
 
@@ -117,19 +136,29 @@ export default function AdminPanel() {
                             <p className="empty-message">No pending facilities to review</p>
                         ) : (
                             <div className="items-grid">
-                                {pendingFacilities.map(facility => (
-                                    <div key={facility.id} className="pending-card">
-                                        <h3>{facility.name}</h3>
+                                {pendingFacilities.map(facility => (                                    <div key={facility.id} className="pending-card">
+                                        {facility.images && facility.images.length > 0 && (
+                                            <div 
+                                                className="card-image" 
+                                                onClick={() => openImageViewer(facility.images || [], 0)}
+                                                style={{ cursor: 'pointer' }}
+                                                title="Click to view full size"
+                                            >
+                                                <img 
+                                                    src={facility.images.find(img => img.is_primary)?.url || facility.images[0].url} 
+                                                    alt={facility.name} 
+                                                />
+                                            </div>
+                                        )}                                        <h3>{facility.name}</h3>
                                         <div className="card-details">
-                                            <p><strong>Category:</strong> {facility.category_name}</p>
-                                            <p><strong>Sport:</strong> {facility.sport_name}</p>
-                                            <p><strong>Surface:</strong> {facility.surface_name}</p>
-                                            <p><strong>Environment:</strong> {facility.environment_name}</p>
-                                            <p><strong>Capacity:</strong> {facility.capacity}</p>
-                                            <p><strong>Description:</strong> {facility.description}</p>
-                                            {facility.sport_complex_name && (
-                                                <p><strong>Complex:</strong> {facility.sport_complex_name}</p>
+                                            {facility.manager_name && (
+                                                <p><strong>Created By:</strong> {facility.manager_name}</p>
                                             )}
+                                            <p><strong>Sport:</strong> {facility.sport_name}</p>
+                                            <p><strong>Category:</strong> {facility.category_name}</p>
+                                            <p><strong>City:</strong> {facility.city}</p>
+                                            <p><strong>Address:</strong> {facility.address}</p>
+                                            <p><strong>Capacity:</strong> {facility.capacity}</p>
                                         </div>
                                         <div className="card-status">
                                             <span className={`status-badge ${facility.is_verified ? (facility.is_active ? "active" : "inactive") : "pending"}`}>
@@ -137,6 +166,12 @@ export default function AdminPanel() {
                                             </span>
                                         </div>
                                         <div className="card-actions">
+                                            <button
+                                                className="btn-view-details"
+                                                onClick={() => openDetailModal(facility, "facility")}
+                                            >
+                                                View Details
+                                            </button>
                                             {!facility.is_verified ? (
                                                 <button
                                                     className="btn-verify"
@@ -161,14 +196,25 @@ export default function AdminPanel() {
                         pendingComplexes.length === 0 ? (
                             <p className="empty-message">No pending sport complexes to review</p>
                         ) : (
-                            <div className="items-grid">
-                                {pendingComplexes.map(complex => (
+                            <div className="items-grid">                                {pendingComplexes.map(complex => (
                                     <div key={complex.id} className="pending-card">
+                                        {complex.images && complex.images.length > 0 && (
+                                            <div 
+                                                className="card-image"
+                                                onClick={() => openImageViewer(complex.images || [], 0)}
+                                                style={{ cursor: 'pointer' }}
+                                                title="Click to view full size"
+                                            >
+                                                <img 
+                                                    src={complex.images.find(img => img.is_primary)?.url || complex.images[0].url} 
+                                                    alt={complex.name} 
+                                                />
+                                            </div>
+                                        )}
                                         <h3>{complex.name}</h3>
                                         <div className="card-details">
                                             <p><strong>City:</strong> {complex.city}</p>
                                             <p><strong>Address:</strong> {complex.address}</p>
-                                            <p><strong>Description:</strong> {complex.description}</p>
                                         </div>
                                         <div className="card-status">
                                             <span className={`status-badge ${complex.is_verified ? (complex.is_active ? "active" : "inactive") : "pending"}`}>
@@ -176,6 +222,12 @@ export default function AdminPanel() {
                                             </span>
                                         </div>
                                         <div className="card-actions">
+                                            <button
+                                                className="btn-view-details"
+                                                onClick={() => openDetailModal(complex, "complex")}
+                                            >
+                                                View Details
+                                            </button>
                                             {!complex.is_verified ? (
                                                 <button
                                                     className="btn-verify"
@@ -198,6 +250,38 @@ export default function AdminPanel() {
                         )
                     )}
                 </div>
+            )}
+
+            {selectedItem && modalType && (
+                <AdminDetailModal
+                    item={selectedItem}
+                    type={modalType}
+                    onClose={() => {
+                        setSelectedItem(null);
+                        setModalType(null);
+                    }}
+                    onVerify={() => {
+                        if (modalType === "facility") {
+                            handleVerifyFacility(selectedItem.id);
+                        } else {
+                            handleVerifyComplex(selectedItem.id);
+                        }
+                    }}
+                    onToggleStatus={() => {
+                        if (modalType === "facility") {
+                            handleToggleFacilityStatus(selectedItem.id, selectedItem.is_active);
+                        } else {
+                            handleToggleComplexStatus(selectedItem.id, selectedItem.is_active);
+                        }                    }}
+                />
+            )}
+
+            {showImageViewer && (
+                <ImageViewerModal
+                    images={viewerImages}
+                    initialIndex={viewerInitialIndex}
+                    onClose={() => setShowImageViewer(false)}
+                />
             )}
         </div>
     );
