@@ -202,3 +202,109 @@
 .disconnect-button:hover {
     background-color: #c82333;
 }
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+/* Mobile devices (up to 768px) */
+@media (max-width: 768px) {
+    .profile-container {
+        padding: 1rem;
+        margin: 1rem auto;
+    }
+
+    .profile-container h1 {
+        font-size: 1.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .profile-card {
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .profile-card h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .profile-field {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    .profile-field strong {
+        min-width: auto;
+    }
+
+    .profile-field span {
+        text-align: left;
+        word-break: break-word;
+    }
+
+    .change-password-form {
+        gap: 1rem;
+    }
+
+    .calendar-status {
+        font-size: 1rem;
+        padding: 0.875rem;
+    }
+
+    .calendar-status .status-icon {
+        font-size: 1.25rem;
+    }
+
+    .connect-calendar-button,
+    .disconnect-button {
+        width: 100%;
+        padding: 0.875rem 1rem;
+    }
+
+    .profile-note {
+        padding: 0.875rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Extra small devices (up to 480px) */
+@media (max-width: 480px) {
+    .profile-container {
+        padding: 0.75rem;
+        margin: 0.75rem auto;
+    }
+
+    .profile-container h1 {
+        font-size: 1.5rem;
+    }
+
+    .profile-card {
+        padding: 1rem;
+    }
+
+    .profile-card h2 {
+        font-size: 1.1rem;
+    }
+
+    .calendar-status {
+        font-size: 0.95rem;
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .calendar-info {
+        font-size: 0.9rem;
+    }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+    .change-password-button,
+    .connect-calendar-button,
+    .disconnect-button {
+        min-height: 44px;
+    }
+}

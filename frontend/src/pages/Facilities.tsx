@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { searchFacilities, getCities, getSurfaces, getEnvironments } from "../services/api";
+import { searchFacilities, getCities, getSurfaces, getEnvironments, getSports } from "../services/api";
 import type { FacilityDetails } from "../types";
 import FacilityCard from "../components/FacilityCard";
 import "../styles/Facilities.css";
@@ -16,6 +16,11 @@ interface Environment {
     description: string;
 }
 
+interface Sport {
+    id: number;
+    name: string;
+}
+
 export default function Facilities() {
     const [facilities, setFacilities] = useState<FacilityDetails[]>([]);
     const [loading, setLoading] = useState(true);
@@ -30,10 +35,9 @@ export default function Facilities() {
     const [minCapacity, setMinCapacity] = useState<string>("");
     const [maxCapacity, setMaxCapacity] = useState<string>("");
     const [sortBy, setSortBy] = useState<string>("");
-    const [sortOrder, setSortOrder] = useState<string>("asc");
-
-    // Metadata states
+    const [sortOrder, setSortOrder] = useState<string>("asc");    // Metadata states
     const [cities, setCities] = useState<string[]>([]);
+    const [sports, setSports] = useState<Sport[]>([]);
     const [surfaces, setSurfaces] = useState<Surface[]>([]);
     const [environments, setEnvironments] = useState<Environment[]>([]);
 
@@ -44,12 +48,14 @@ export default function Facilities() {
 
     const fetchMetadata = async () => {
         try {
-            const [citiesData, surfacesData, environmentsData] = await Promise.all([
+            const [citiesData, sportsData, surfacesData, environmentsData] = await Promise.all([
                 getCities(),
+                getSports(),
                 getSurfaces(),
                 getEnvironments(),
             ]);
             setCities(citiesData || []);
+            setSports(sportsData || []);
             setSurfaces(surfacesData || []);
             setEnvironments(environmentsData || []);
         } catch (err: any) {
@@ -87,13 +93,7 @@ export default function Facilities() {
             fetchFacilities();
         }, 300); // Debounce search
 
-        return () => clearTimeout(timer);
-    }, [selectedCity, selectedSport, selectedSurface, selectedEnvironment, minCapacity, maxCapacity, sortBy, sortOrder]);
-
-    const getUniqueSports = () => {
-        const sports = facilities.map(f => f.sport_name);
-        return Array.from(new Set(sports)).filter(Boolean).sort();
-    };
+        return () => clearTimeout(timer);    }, [selectedCity, selectedSport, selectedSurface, selectedEnvironment, minCapacity, maxCapacity, sortBy, sortOrder]);
 
     const filteredFacilities = facilities.filter(facility => {
         if (!searchTerm) return true;
@@ -163,18 +163,16 @@ export default function Facilities() {
                                 </option>
                             ))}
                         </select>
-                    </div>
-
-                    <div className="filter-box">
+                    </div>                    <div className="filter-box">
                         <label>Sport:</label>
                         <select
                             value={selectedSport}
                             onChange={(e) => setSelectedSport(e.target.value)}
                         >
                             <option value="">All Sports</option>
-                            {getUniqueSports().map(sport => (
-                                <option key={sport} value={sport}>
-                                    {sport}
+                            {sports.map(sport => (
+                                <option key={sport.id} value={sport.name}>
+                                    {sport.name}
                                 </option>
                             ))}
                         </select>

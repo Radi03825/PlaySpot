@@ -132,7 +132,7 @@ export default function ManageFacilities() {
             {showCreateForm && (
                 <div className="modal-overlay" onClick={closeCreateModal}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <button className="modal-close" onClick={closeCreateModal}></button>
+                        <button className="modal-close" onClick={closeCreateModal}>x</button>
 
                         <h2>Create New</h2>
 

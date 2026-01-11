@@ -15,22 +15,41 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
+.facility-card-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background: #f0f0f0;
+}
+
+.facility-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.facility-card:hover .facility-card-image img {
+    transform: scale(1.1);
+}
+
 .facility-card-header {
     padding: 1.25rem 1.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 1px solid #eee;
 }
 
 .facility-card-header h3 {
     margin: 0;
     font-size: 1.3rem;
+    color: #000;
+    font-weight: bold;
 }
 
 .verified-badge-small {
-    color: #fff;
+    color: #4CAF50;
     font-size: 1.2rem;
 }
 
@@ -122,5 +141,83 @@
 
 .view-btn:hover {
     opacity: 0.9;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+    .facility-card-header {
+        padding: 1rem 1.25rem;
+    }
+
+    .facility-card-header h3 {
+        font-size: 1.2rem;
+    }
+
+    .facility-card-body {
+        padding: 1.25rem;
+    }
+
+    .facility-card-footer {
+        padding: 0.875rem 1.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .facility-card-header {
+        padding: 0.875rem 1rem;
+    }
+
+    .facility-card-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .verified-badge-small {
+        font-size: 1rem;
+    }
+
+    .facility-card-body {
+        padding: 1rem;
+    }
+
+    .facility-tags {
+        gap: 0.4rem;
+    }
+
+    .tag {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.8rem;
+    }
+
+    .facility-description {
+        font-size: 0.9rem;
+        -webkit-line-clamp: 3;
+    }
+
+    .info-item {
+        font-size: 0.85rem;
+    }
+
+    .facility-complex {
+        font-size: 0.85rem;
+    }
+
+    .facility-card-footer {
+        padding: 0.75rem 1rem;
+    }
+
+    .view-btn {
+        padding: 0.65rem;
+        font-size: 0.95rem;
+    }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+    .view-btn {
+        min-height: 44px;
+    }
 }
 

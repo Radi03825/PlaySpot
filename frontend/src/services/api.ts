@@ -347,6 +347,7 @@ export async function createSportComplex(complexData: {
     address: string;
     city: string;
     description: string;
+    image_urls?: string[];
     facilities?: Array<{
         name: string;
         category_id: number;
@@ -395,6 +396,9 @@ export async function createFacility(facilityData: {
     environment_id: number;
     description: string;
     capacity: number;
+    city?: string;
+    address?: string;
+    image_urls?: string[];
 }) {
     return authenticatedFetch("/facilities", {
         method: "POST",
@@ -467,6 +471,23 @@ export async function getEnvironments() {
 
     if (!response.ok) {
         throw new Error(data.error || "Failed to fetch environments");
+    }
+
+    return data;
+}
+
+// Get images for an entity (facility or sport_complex)
+export async function getEntityImages(entityType: string, entityId: number) {
+    const response = await fetch(`${API_URL}/images/${entityType}/${entityId}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch images");
     }
 
     return data;

@@ -291,8 +291,20 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .my-bookings-page {
+        padding: 1.5rem 0;
+    }
+
+    .my-bookings-page .container {
+        padding: 0 0.75rem;
+    }
+
     .page-header h1 {
         font-size: 2rem;
+    }
+
+    .page-header p {
+        font-size: 1rem;
     }
 
     .bookings-filters {
@@ -302,6 +314,10 @@
     .bookings-filters button {
         padding: 0.5rem 1rem;
         font-size: 0.9rem;
+    }
+
+    .booking-card {
+        padding: 1.25rem;
     }
 
     .booking-header {
@@ -319,6 +335,62 @@
 
     .detail-row {
         grid-template-columns: 1fr;
+    }
+
+    .error-banner {
+        padding: 0.875rem;
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .my-bookings-page {
+        padding: 1rem 0;
+    }
+
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.75rem;
+    }
+
+    .page-header p {
+        font-size: 0.95rem;
+    }
+
+    .bookings-filters button {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.85rem;
+    }
+
+    .booking-card {
+        padding: 1rem;
+    }
+
+    .empty-state {
+        padding: 3rem 1.5rem;
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+    }
+
+    .empty-state h2 {
+        font-size: 1.25rem;
+    }
+
+    .empty-state p {
+        font-size: 1rem;
+    }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+    .bookings-filters button,
+    .booking-actions button {
+        min-height: 44px;
     }
 }
 

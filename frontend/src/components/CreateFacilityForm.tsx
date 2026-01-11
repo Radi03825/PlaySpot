@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createFacility, getCategories, getSports, getSurfaces, getEnvironments, getMySportComplexes } from "../services/api";
 import type { Category, Sport, Surface, Environment, SportComplex } from "../types";
+import { ImageUpload } from "./ImageUpload";
 
 interface CreateFacilityFormProps {
     onSuccess?: (message: string) => void;
@@ -20,8 +21,7 @@ export default function CreateFacilityForm({
     const [surfaces, setSurfaces] = useState<Surface[]>([]);
     const [environments, setEnvironments] = useState<Environment[]>([]);
     const [mySportComplexes, setMySportComplexes] = useState<SportComplex[]>([]);
-
-    const [facilityForm, setFacilityForm] = useState({
+    const [imageUrls, setImageUrls] = useState<string[]>([]);    const [facilityForm, setFacilityForm] = useState({
         name: "",
         sport_complex_id: null as number | null,
         sport_id: 0,
@@ -29,7 +29,9 @@ export default function CreateFacilityForm({
         surface_id: 0,
         environment_id: 0,
         description: "",
-        capacity: 0
+        capacity: 0,
+        city: "",
+        address: ""
     });
 
     useEffect(() => {
@@ -78,13 +80,11 @@ export default function CreateFacilityForm({
             sport_id: sportId,
             category_id: filteredCategories[0]?.id || 0
         });
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
+    };    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
-        try {
+        try {            
             await createFacility({
                 name: facilityForm.name,
                 sport_complex_id: facilityForm.sport_complex_id,
@@ -92,7 +92,10 @@ export default function CreateFacilityForm({
                 surface_id: facilityForm.surface_id,
                 environment_id: facilityForm.environment_id,
                 description: facilityForm.description,
-                capacity: facilityForm.capacity
+                capacity: facilityForm.capacity,
+                city: facilityForm.city,
+                address: facilityForm.address,
+                image_urls: imageUrls
             });
 
             if (onSuccess) {
@@ -108,8 +111,11 @@ export default function CreateFacilityForm({
                 surface_id: 0,
                 environment_id: 0,
                 description: "",
-                capacity: 0
+                capacity: 0,
+                city: "",
+                address: ""
             });
+            setImageUrls([]);
         } catch (err) {
             if (onError) {
                 onError((err as Error).message || "Failed to create facility");
@@ -129,9 +135,7 @@ export default function CreateFacilityForm({
                 value={facilityForm.name}
                 onChange={(e) => setFacilityForm({ ...facilityForm, name: e.target.value })}
                 required
-            />
-
-            <select
+            />            <select
                 value={facilityForm.sport_complex_id || ""}
                 onChange={(e) => setFacilityForm({
                     ...facilityForm,
@@ -143,6 +147,27 @@ export default function CreateFacilityForm({
                     <option key={complex.id} value={complex.id}>{complex.name}</option>
                 ))}
             </select>
+
+            {/* Show city and address fields only for standalone facilities */}
+            {!facilityForm.sport_complex_id && (
+                <>
+                    <input
+                        type="text"
+                        placeholder="City"
+                        value={facilityForm.city}
+                        onChange={(e) => setFacilityForm({ ...facilityForm, city: e.target.value })}
+                        required
+                    />
+
+                    <input
+                        type="text"
+                        placeholder="Address"
+                        value={facilityForm.address}
+                        onChange={(e) => setFacilityForm({ ...facilityForm, address: e.target.value })}
+                        required
+                    />
+                </>
+            )}
 
             <select
                 value={facilityForm.sport_id}
@@ -194,15 +219,19 @@ export default function CreateFacilityForm({
                 value={facilityForm.description}
                 onChange={(e) => setFacilityForm({ ...facilityForm, description: e.target.value })}
                 required
-            />
-
-            <input
+            />            <input
                 type="number"
                 placeholder="Capacity"
                 value={facilityForm.capacity || ""}
                 onChange={(e) => setFacilityForm({ ...facilityForm, capacity: parseInt(e.target.value) })}
                 required
                 min="1"
+            />
+
+            <ImageUpload 
+                onImagesUploaded={setImageUrls} 
+                maxImages={5}
+                folder="facilities"
             />
 
             <button type="submit" className="btn-primary" disabled={loading}>

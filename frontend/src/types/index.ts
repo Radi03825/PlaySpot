@@ -60,6 +60,7 @@ export interface CreateSportComplexRequest {
     address: string;
     city: string;
     description: string;
+    image_urls?: string[];
     facilities?: Array<{
         name: string;
         category_id: number;
@@ -78,6 +79,9 @@ export interface CreateFacilityRequest {
     environment_id: number;
     description: string;
     capacity: number;
+    city?: string;
+    address?: string;
+    image_urls?: string[];
 }
 
 export interface User {

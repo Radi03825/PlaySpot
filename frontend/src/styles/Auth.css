@@ -594,4 +594,154 @@
     text-align: center;
 }
 
+/* ============================================
+   RESPONSIVE DESIGN - Mobile First
+   ============================================ */
+
+/* Mobile devices (up to 480px) */
+@media (max-width: 480px) {
+    .auth-container {
+        margin: 1rem;
+        padding: 1.25rem;
+        max-width: 100%;
+    }
+
+    .auth-form h1 {
+        font-size: 1.75rem;
+    }
+
+    .auth-form input {
+        padding: 0.65rem;
+        font-size: 0.95rem;
+    }
+
+    .auth-form button {
+        padding: 0.65rem;
+        font-size: 0.95rem;
+    }
+
+    .modal-content {
+        padding: 1.5rem;
+        width: 95%;
+        max-width: 95%;
+    }
+
+    .modal-content h2 {
+        font-size: 1.3rem;
+    }
+
+    .modal-buttons {
+        flex-direction: column;
+    }
+
+    .modal-buttons button {
+        width: 100%;
+    }
+
+    .forgot-password-link {
+        text-align: center;
+        margin-top: -0.25rem;
+    }
+
+    .auth-footer {
+        font-size: 0.9rem;
+    }
+
+    .divider span {
+        padding: 0 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .resend-verification {
+        padding: 0.75rem;
+    }
+
+    .resend-verification p {
+        font-size: 0.85rem;
+    }
+
+    .resend-button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        width: 100%;
+    }
+
+    .auth-card {
+        margin: 1rem;
+        padding: 1.25rem;
+        max-width: 100%;
+    }
+
+    .resend-section {
+        padding: 1rem;
+    }
+}
+
+/* Small tablets (481px to 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+    .auth-container {
+        margin: 1.5rem auto;
+        padding: 1.75rem;
+    }
+
+    .auth-form h1 {
+        font-size: 2rem;
+    }
+
+    .modal-content {
+        width: 85%;
+        padding: 1.75rem;
+    }
+
+    .auth-card {
+        margin: 1.5rem auto;
+        padding: 1.75rem;
+    }
+}
+
+/* Tablets and larger (769px and up) - keep original styles */
+@media (min-width: 769px) {
+    /* Original desktop styles apply */
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+    .auth-form input,
+    .auth-form button,
+    .password-toggle-icon,
+    .modal-buttons button {
+        min-height: 44px; /* Apple's recommended touch target size */
+    }
+
+    .forgot-password-link a {
+        padding: 0.5rem 0;
+        display: inline-block;
+    }
+
+    .auth-footer a {
+        padding: 0.5rem;
+        display: inline-block;
+    }
+}
+
+/* Landscape mode on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .auth-container {
+        margin: 1rem auto;
+    }
+
+    .modal-content {
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+}
+
+/* High-DPI screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .auth-form input,
+    .auth-form button {
+        border-width: 0.5px;
+    }
+}
+
 

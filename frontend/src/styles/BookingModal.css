@@ -446,4 +446,96 @@
         max-width: 95%;
         max-height: 95vh;
     }
+
+    .modal-header {
+        padding: 1rem;
+    }
+
+    .modal-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .close-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 1.5rem;
+    }
+}
+
+/* Extra small devices (up to 480px) */
+@media (max-width: 480px) {
+    .booking-modal {
+        max-width: 100%;
+        width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .modal-header {
+        padding: 0.875rem;
+    }
+
+    .modal-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .modal-body {
+        padding: 0.875rem;
+    }
+
+    .booking-content {
+        gap: 1rem;
+        min-height: auto;
+    }
+
+    .date-selector select {
+        padding: 0.65rem;
+        font-size: 0.95rem;
+    }
+
+    .slots-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.5rem;
+        max-height: 200px;
+    }
+
+    .btn-confirm {
+        padding: 0.65rem 1.25rem;
+        font-size: 0.95rem;
+    }
+
+    .info-message {
+        padding: 2rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+    .close-btn,
+    .btn-confirm {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .date-selector select {
+        min-height: 44px;
+    }
+}
+
+/* Landscape mode on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .booking-modal {
+        max-height: 100vh;
+        height: 100%;
+    }
+
+    .slots-grid {
+        max-height: 150px;
+    }
 }

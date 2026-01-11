@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getFacilityById } from "../services/api";
+import { getFacilityById, getEntityImages } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import type { FacilityDetails } from "../types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -8,16 +8,22 @@ import BookingModal from "../components/BookingModal";
 import "../styles/FacilityDetails.css";
 import {faCircleCheck} from "@fortawesome/free-solid-svg-icons";
 
+interface Image {
+    id: number;
+    url: string;
+    is_primary: boolean;
+}
+
 export default function FacilityDetailsPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
     const [facility, setFacility] = useState<FacilityDetails | null>(null);
+    const [images, setImages] = useState<Image[]>([]);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [showBookingModal, setShowBookingModal] = useState(false);
-
-    useEffect(() => {
+    const [showBookingModal, setShowBookingModal] = useState(false);    useEffect(() => {
         let isMounted = true;
 
         const fetchData = async () => {
@@ -25,10 +31,14 @@ export default function FacilityDetailsPage() {
 
             try {
                 setLoading(true);
-                const data = await getFacilityById(parseInt(id));
+                const [facilityData, imagesData] = await Promise.all([
+                    getFacilityById(parseInt(id)),
+                    getEntityImages('facility', parseInt(id))
+                ]);
 
                 if (isMounted) {
-                    setFacility(data);
+                    setFacility(facilityData);
+                    setImages(imagesData || []);
                     setError("");
                 }
             } catch (err: unknown) {
@@ -89,9 +99,7 @@ export default function FacilityDetailsPage() {
                 <div className="error">Facility not found</div>
             </div>
         );
-    }
-
-    return (
+    }    return (
         <div className="facility-details-container">
             <div className="facility-hero">
                 <h1>{facility.name}</h1>
@@ -101,6 +109,32 @@ export default function FacilityDetailsPage() {
                     </span>
                 )}
             </div>
+
+            {/* Image Gallery */}
+            {images.length > 0 && (
+                <div className="facility-gallery">
+                    <div className="main-image">
+                        <img 
+                            src={images[selectedImageIndex]?.url || images[0].url} 
+                            alt={`${facility.name} - Image ${selectedImageIndex + 1}`}
+                        />
+                    </div>
+                    {images.length > 1 && (
+                        <div className="thumbnail-strip">
+                            {images.map((image, index) => (
+                                <div
+                                    key={image.id}
+                                    className={`thumbnail ${index === selectedImageIndex ? 'active' : ''}`}
+                                    onClick={() => setSelectedImageIndex(index)}
+                                >
+                                    <img src={image.url} alt={`Thumbnail ${index + 1}`} />
+                                    {image.is_primary && <span className="primary-badge">Primary</span>}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="facility-content">
                 <div className="facility-main-info">

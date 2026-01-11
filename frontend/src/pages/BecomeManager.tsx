@@ -94,22 +94,22 @@ export default function BecomeManager() {
                 <h2>Why Become a Manager?</h2>
                 <div className="benefits-grid">
                     <div className="benefit-card">
-                        <div className="benefit-icon"></div>
+                        <div className="benefit-icon">📍</div>
                         <h3>List Your Facilities</h3>
                         <p>Add your sports complexes and facilities to our platform</p>
                     </div>
                     <div className="benefit-card">
-                        <div className="benefit-icon"></div>
+                        <div className="benefit-icon">👥</div>
                         <h3>Reach More Customers</h3>
                         <p>Connect with sports enthusiasts looking for venues</p>
                     </div>
                     <div className="benefit-card">
-                        <div className="benefit-icon"></div>
+                        <div className="benefit-icon">⚙️</div>
                         <h3>Manage Your Listings</h3>
                         <p>Update details, availability, and pricing easily</p>
                     </div>
                     <div className="benefit-card">
-                        <div className="benefit-icon"></div>
+                        <div className="benefit-icon">📊</div>
                         <h3>Track Performance</h3>
                         <p>Monitor your bookings and customer engagement</p>
                     </div>
@@ -177,7 +177,7 @@ export default function BecomeManager() {
             {showCreateForm && (
                 <div className="modal-overlay" onClick={closeCreateModal}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <button className="modal-close" onClick={closeCreateModal}></button>
+                        <button className="modal-close" onClick={closeCreateModal}>×</button>
 
                         <h2>Add Your Facility</h2>
 
@@ -220,3 +220,4 @@ export default function BecomeManager() {
         </div>
     );
 }
+

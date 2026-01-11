@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import type { FacilityDetails } from "../types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleCheck } from "@fortawesome/free-solid-svg-icons";
+import { getEntityImages } from "../services/api";
 import "../styles/FacilityCard.css";
 
 interface FacilityCardProps {
@@ -10,6 +12,24 @@ interface FacilityCardProps {
 
 const FacilityCard = ({ facility }: FacilityCardProps) => {
     const navigate = useNavigate();
+    const [primaryImage, setPrimaryImage] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchImage = async () => {
+            try {
+                const images = await getEntityImages('facility', facility.id);
+                if (images && images.length > 0) {
+                    // Find primary image or use first one
+                    const primary = images.find((img: any) => img.is_primary) || images[0];
+                    setPrimaryImage(primary.url);
+                }
+            } catch (err) {
+                console.error('Failed to load facility image:', err);
+            }
+        };
+
+        fetchImage();
+    }, [facility.id]);
 
     const handleClick = () => {
         navigate(`/facilities/${facility.id}`);
@@ -17,6 +37,11 @@ const FacilityCard = ({ facility }: FacilityCardProps) => {
 
     return (
         <div className="facility-card" onClick={handleClick}>
+            {primaryImage && (
+                <div className="facility-card-image">
+                    <img src={primaryImage} alt={facility.name} />
+                </div>
+            )}
             <div className="facility-card-header">
                 <h3>{facility.name}</h3>
                 {facility.is_verified && (
