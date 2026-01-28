@@ -50,7 +50,8 @@ func (r *FacilityRepository) GetAllFacilities() ([]model.FacilityDetails, error)
 			f.city, f.address, f.description, f.capacity, f.is_verified, f.is_active,
 			c.name as category_name, s.name as surface_name, e.name as environment_name,
 			sp.name as sport_name,
-			COALESCE(sc.name, '') as sport_complex_name
+			COALESCE(sc.name, '') as sport_complex_name,
+			f.manager_id
 		FROM facilities f
 		JOIN categories c ON f.category_id = c.id
 		JOIN surfaces s ON f.surface_id = s.id
@@ -74,7 +75,7 @@ func (r *FacilityRepository) GetAllFacilities() ([]model.FacilityDetails, error)
 			&facility.SurfaceID, &facility.EnvironmentID, &facility.City, &facility.Address,
 			&facility.Description, &facility.Capacity, &facility.IsVerified, &facility.IsActive,
 			&facility.CategoryName, &facility.SurfaceName, &facility.EnvironmentName,
-			&facility.SportName, &facility.SportComplexName,
+			&facility.SportName, &facility.SportComplexName, &facility.ManagerID,
 		)
 		if err != nil {
 			return nil, err
@@ -92,7 +93,8 @@ func (r *FacilityRepository) SearchFacilities(params model.FacilitySearchParams)
 			f.city, f.address, f.description, f.capacity, f.is_verified, f.is_active,
 			c.name as category_name, s.name as surface_name, e.name as environment_name,
 			sp.name as sport_name,
-			COALESCE(sc.name, '') as sport_complex_name
+			COALESCE(sc.name, '') as sport_complex_name,
+			f.manager_id
 		FROM facilities f
 		JOIN categories c ON f.category_id = c.id
 		JOIN surfaces s ON f.surface_id = s.id
@@ -180,7 +182,7 @@ func (r *FacilityRepository) SearchFacilities(params model.FacilitySearchParams)
 			&facility.SurfaceID, &facility.EnvironmentID, &facility.City, &facility.Address,
 			&facility.Description, &facility.Capacity, &facility.IsVerified, &facility.IsActive,
 			&facility.CategoryName, &facility.SurfaceName, &facility.EnvironmentName,
-			&facility.SportName, &facility.SportComplexName,
+			&facility.SportName, &facility.SportComplexName, &facility.ManagerID,
 		)
 		if err != nil {
 			return nil, err
@@ -198,7 +200,8 @@ func (r *FacilityRepository) GetFacilityByID(id int64) (*model.FacilityDetails, 
 			f.city, f.address, f.description, f.capacity, f.is_verified, f.is_active,
 			c.name as category_name, s.name as surface_name, e.name as environment_name,
 			sp.name as sport_name,
-			COALESCE(sc.name, '') as sport_complex_name
+			COALESCE(sc.name, '') as sport_complex_name,
+			f.manager_id
 		FROM facilities f
 		JOIN categories c ON f.category_id = c.id
 		JOIN surfaces s ON f.surface_id = s.id
@@ -213,7 +216,7 @@ func (r *FacilityRepository) GetFacilityByID(id int64) (*model.FacilityDetails, 
 		&facility.SurfaceID, &facility.EnvironmentID, &facility.City, &facility.Address,
 		&facility.Description, &facility.Capacity, &facility.IsVerified, &facility.IsActive,
 		&facility.CategoryName, &facility.SurfaceName, &facility.EnvironmentName,
-		&facility.SportName, &facility.SportComplexName,
+		&facility.SportName, &facility.SportComplexName, &facility.ManagerID,
 	)
 	if err != nil {
 		return nil, err
@@ -229,7 +232,8 @@ func (r *FacilityRepository) GetFacilitiesByComplexID(complexID int64) ([]model.
 			f.city, f.address, f.description, f.capacity, f.is_verified, f.is_active,
 			c.name as category_name, s.name as surface_name, e.name as environment_name,
 			sp.name as sport_name,
-			COALESCE(sc.name, '') as sport_complex_name
+			COALESCE(sc.name, '') as sport_complex_name,
+			f.manager_id
 		FROM facilities f
 		JOIN categories c ON f.category_id = c.id
 		JOIN surfaces s ON f.surface_id = s.id
@@ -253,7 +257,7 @@ func (r *FacilityRepository) GetFacilitiesByComplexID(complexID int64) ([]model.
 			&facility.SurfaceID, &facility.EnvironmentID, &facility.City, &facility.Address,
 			&facility.Description, &facility.Capacity, &facility.IsVerified, &facility.IsActive,
 			&facility.CategoryName, &facility.SurfaceName, &facility.EnvironmentName,
-			&facility.SportName, &facility.SportComplexName,
+			&facility.SportName, &facility.SportComplexName, &facility.ManagerID,
 		)
 		if err != nil {
 			return nil, err
@@ -271,7 +275,8 @@ func (r *FacilityRepository) GetFacilitiesByManagerID(managerID int64) ([]model.
 			f.city, f.address, f.description, f.capacity, f.is_verified, f.is_active,
 			c.name as category_name, s.name as surface_name, e.name as environment_name,
 			sp.name as sport_name,
-			COALESCE(sc.name, '') as sport_complex_name
+			COALESCE(sc.name, '') as sport_complex_name,
+			f.manager_id
 		FROM facilities f
 		JOIN categories c ON f.category_id = c.id
 		JOIN surfaces s ON f.surface_id = s.id
@@ -295,7 +300,7 @@ func (r *FacilityRepository) GetFacilitiesByManagerID(managerID int64) ([]model.
 			&facility.SurfaceID, &facility.EnvironmentID, &facility.City, &facility.Address,
 			&facility.Description, &facility.Capacity, &facility.IsVerified, &facility.IsActive,
 			&facility.CategoryName, &facility.SurfaceName, &facility.EnvironmentName,
-			&facility.SportName, &facility.SportComplexName,
+			&facility.SportName, &facility.SportComplexName, &facility.ManagerID,
 		)
 		if err != nil {
 			return nil, err
@@ -371,4 +376,25 @@ func (r *FacilityRepository) ToggleFacilityStatus(id int64, isActive bool) error
 	query := `UPDATE facilities SET is_active = $1 WHERE id = $2`
 	_, err := r.db.Exec(query, isActive, id)
 	return err
+}
+
+func (r *FacilityRepository) UpdateFacility(id int64, name string, sportComplexID *int64, categoryID, surfaceID, environmentID int64, city, address, description string, capacity int) error {
+	query := `
+		UPDATE facilities 
+		SET name = $1, sport_complex_id = $2, category_id = $3, surface_id = $4, 
+		    environment_id = $5, city = $6, address = $7, description = $8, capacity = $9
+		WHERE id = $10
+	`
+	_, err := r.db.Exec(query, name, sportComplexID, categoryID, surfaceID, environmentID, city, address, description, capacity, id)
+	return err
+}
+
+func (r *FacilityRepository) GetFacilityManagerID(id int64) (*int64, error) {
+	var managerID *int64
+	query := `SELECT manager_id FROM facilities WHERE id = $1`
+	err := r.db.QueryRow(query, id).Scan(&managerID)
+	if err != nil {
+		return nil, err
+	}
+	return managerID, nil
 }

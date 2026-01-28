@@ -28,7 +28,7 @@ func main() {
 		}
 	}
 
-	db, err := repository.ConnectDatabase(true, true)
+	db, err := repository.ConnectDatabase(true, false)
 	if err != nil {
 		panic("Failed to connect to database: " + err.Error())
 	}
@@ -40,6 +40,7 @@ func main() {
 	metadataRepo := repository.NewMetadataRepository(db)
 	reservationRepo := repository.NewReservationRepository(db)
 	imageRepo := repository.NewImageRepository(db)
+	paymentRepo := repository.NewPaymentRepository(db)
 
 	// Create email service
 	emailService := service.NewEmailService()
@@ -76,14 +77,22 @@ func main() {
 	// Create reservation service (needs userService, facilityService, and googleCalendarService)
 	reservationService := service.NewReservationService(reservationRepo, userService, facilityService, googleCalendarService)
 
+	// Create payment service
+	paymentService := service.NewPaymentService(paymentRepo, reservationRepo, facilityService, emailService, googleCalendarService, userService)
+
+	//// Create and start reminder service
+	//reminderService := service.NewReminderService(reservationRepo, userService, facilityService, sportComplexService, emailService)
+	//reminderService.Start()
+
 	// Create handlers
 	userHandler := handler.NewUserHandler(userService, tokenService, googleCalendarService)
 	sportComplexHandler := handler.NewSportComplexHandler(sportComplexService)
 	facilityHandler := handler.NewFacilityHandler(facilityService, metadataRepo)
 	reservationHandler := handler.NewReservationHandler(reservationService)
 	imageHandler := handler.NewImageHandler(imageService)
+	paymentHandler := handler.NewPaymentHandler(paymentService)
 
-	router := http2.NewRouter(userHandler, facilityHandler, sportComplexHandler, reservationHandler, imageHandler)
+	router := http2.NewRouter(userHandler, facilityHandler, sportComplexHandler, reservationHandler, imageHandler, paymentHandler)
 
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {

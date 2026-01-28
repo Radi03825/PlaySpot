@@ -76,3 +76,25 @@ func GetUserFromContext(ctx context.Context) (*UserClaims, bool) {
 	claims, ok := ctx.Value(UserContextKey).(*UserClaims)
 	return claims, ok
 }
+
+func AdminRoleMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := GetUserFromContext(r.Context())
+		if !ok {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(ErrorResponse{Error: "Unauthorized"})
+			return
+		}
+
+		// Check if user is admin (role_id = 1)
+		if claims.RoleID != 1 {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(ErrorResponse{Error: "Admin access required"})
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}

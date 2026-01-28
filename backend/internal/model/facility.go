@@ -22,6 +22,7 @@ type FacilityDetails struct {
 	EnvironmentName  string  `json:"environment_name"`
 	SportName        string  `json:"sport_name"`
 	SportComplexName string  `json:"sport_complex_name,omitempty"`
+	ManagerID        *int64  `json:"manager_id,omitempty"`
 	ManagerName      string  `json:"manager_name,omitempty"`
 	ManagerEmail     string  `json:"manager_email,omitempty"`
 	Images           []Image `json:"images,omitempty"`

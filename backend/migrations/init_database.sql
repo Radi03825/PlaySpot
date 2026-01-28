@@ -165,12 +165,20 @@ CREATE TABLE IF NOT EXISTS images (
     uploaded_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Create partial unique index for storage_id (only when storage_id is NOT NULL)
--- This prevents duplicate storage IDs while allowing multiple NULL values
-CREATE UNIQUE INDEX IF NOT EXISTS idx_images_unique_storage 
-ON images(storage_provider, storage_id) 
-WHERE storage_id IS NOT NULL;
-
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_images_reference ON images(image_type, reference_id);
 CREATE INDEX IF NOT EXISTS idx_images_owner ON images(owner_id);
+
+-- 14. CREATE PAYMENTS TABLE
+CREATE TABLE IF NOT EXISTS payments (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    reservation_id BIGINT NOT NULL REFERENCES facility_reservations(id) ON DELETE CASCADE,
+    amount NUMERIC(10, 2) NOT NULL,
+    currency VARCHAR(10) NOT NULL DEFAULT 'EUR',
+    payment_method VARCHAR(50) NOT NULL,
+    payment_status VARCHAR(50) NOT NULL CHECK (payment_status IN ('pending', 'completed', 'failed', 'refunded')),
+    expired_at TIMESTAMP,
+    paid_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);

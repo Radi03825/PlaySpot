@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+
 	"github.com/Radi03825/PlaySpot/internal/model"
 	"github.com/Radi03825/PlaySpot/internal/repository"
 )
@@ -120,12 +122,35 @@ func (s *FacilityService) ToggleFacilityStatus(id int64, isActive bool) error {
 	return s.repo.ToggleFacilityStatus(id, isActive)
 }
 
+func (s *FacilityService) UpdateFacility(id int64, name string, sportComplexID *int64, categoryID, surfaceID, environmentID int64, city, address, description string, capacity int, userID int64) error {
+	// Check if user owns the facility
+	managerID, err := s.repo.GetFacilityManagerID(id)
+	if err != nil {
+		return err
+	}
+
+	if managerID == nil || *managerID != userID {
+		return fmt.Errorf("unauthorized: you do not own this facility")
+	}
+
+	// If facility belongs to a sport complex, get city and address from the complex
+	if sportComplexID != nil && *sportComplexID > 0 {
+		complex, err := s.sportComplexService.GetSportComplexByID(*sportComplexID)
+		if err != nil {
+			return err
+		}
+		city = complex.City
+		address = complex.Address
+	}
+
+	return s.repo.UpdateFacility(id, name, sportComplexID, categoryID, surfaceID, environmentID, city, address, description, capacity)
+}
+
 // CreateFacilityWithoutImages creates a facility without handling images (for internal use)
 func (s *FacilityService) CreateFacilityWithoutImages(name string, sportComplexID *int64, categoryID, surfaceID, environmentID int64, city, address, description string, capacity int, managerID int64) (*model.Facility, error) {
 	return s.repo.CreateFacility(name, sportComplexID, categoryID, surfaceID, environmentID, city, address, description, capacity, managerID)
 }
 
-// GetFacilityDetailsByID retrieves facility details by ID
 func (s *FacilityService) GetFacilityDetailsByID(id int64) (*model.FacilityDetails, error) {
 	return s.repo.GetFacilityByID(id)
 }

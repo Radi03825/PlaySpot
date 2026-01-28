@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.FacilityHandler, sportComplexHandler *handler.SportComplexHandler, reservationHandler *handler.ReservationHandler, imageHandler *handler.ImageHandler) *mux.Router {
+func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.FacilityHandler, sportComplexHandler *handler.SportComplexHandler, reservationHandler *handler.ReservationHandler, imageHandler *handler.ImageHandler, paymentHandler *handler.PaymentHandler) *mux.Router {
 	router := mux.NewRouter()
 	api := router.PathPrefix("/api").Subrouter()
 
@@ -60,14 +60,19 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	protected.HandleFunc("/facilities/my", facilityHandler.GetMyFacilities).Methods("GET")
 	protected.HandleFunc("/sport-complexes", sportComplexHandler.CreateSportComplex).Methods("POST")
 	protected.HandleFunc("/facilities", facilityHandler.CreateFacility).Methods("POST")
+	protected.HandleFunc("/facilities/{id:[0-9]+}", facilityHandler.UpdateFacility).Methods("PUT")
 	// Reservation routes (authenticated users)
 	protected.HandleFunc("/reservations", reservationHandler.CreateReservation).Methods("POST")
 	protected.HandleFunc("/reservations/user", reservationHandler.GetUserReservations).Methods("GET")
 	protected.HandleFunc("/reservations/{id:[0-9]+}/cancel", reservationHandler.CancelReservation).Methods("PUT", "POST")
 
+	// Payment routes (authenticated users)
+	protected.HandleFunc("/reservations/{id:[0-9]+}/payment", paymentHandler.GetPaymentByReservation).Methods("GET")
+	protected.HandleFunc("/reservations/{id:[0-9]+}/pay", paymentHandler.ProcessPayment).Methods("POST")
+
 	// Admin routes - manage all pending items
 	adminRoutes := protected.PathPrefix("/admin").Subrouter()
-	// TODO: Add admin role check middleware here
+	adminRoutes.Use(middleware.AdminRoleMiddleware)
 	adminRoutes.HandleFunc("/facilities/pending", facilityHandler.GetPendingFacilities).Methods("GET")
 	adminRoutes.HandleFunc("/facilities/{id}/verify", facilityHandler.VerifyFacility).Methods("POST")
 	adminRoutes.HandleFunc("/facilities/{id}/toggle-status", facilityHandler.ToggleFacilityStatus).Methods("POST")

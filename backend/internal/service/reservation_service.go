@@ -205,9 +205,6 @@ func (s *ReservationService) CreateReservation(userID int64, req dto.CreateReser
 		return nil, fmt.Errorf("failed to create reservation: %w", err)
 	}
 
-	// Try to create Google Calendar event if user has Google auth
-	s.createCalendarEventForReservation(reservation)
-
 	return reservation, nil
 }
 
@@ -246,12 +243,16 @@ func (s *ReservationService) createCalendarEventForReservation(reservation *mode
 		reservation.TotalPrice,
 	)
 
+	// Combine address and city for location
+	location := fmt.Sprintf("%s, %s", facility.Address, facility.City)
+
 	eventID, err := s.googleCalendarService.CreateEvent(
 		accessToken,
 		refreshToken,
 		tokenExpiry,
 		facility.Name,
 		description,
+		location,
 		reservation.StartTime,
 		reservation.EndTime,
 	)
@@ -262,7 +263,7 @@ func (s *ReservationService) createCalendarEventForReservation(reservation *mode
 		return
 	}
 
-	fmt.Printf("✅ Calendar event created with ID: %s for reservation %d\n", eventID, reservation.ID)
+	fmt.Printf("Calendar event created with ID: %s for reservation %d\n", eventID, reservation.ID)
 
 	// Update reservation with calendar event ID
 	updateErr := s.repo.UpdateReservationCalendarEventID(reservation.ID, eventID)

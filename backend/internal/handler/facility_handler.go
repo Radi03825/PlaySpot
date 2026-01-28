@@ -245,6 +245,61 @@ func (h *FacilityHandler) ToggleFacilityStatus(w http.ResponseWriter, r *http.Re
 	json.NewEncoder(w).Encode(map[string]string{"message": "Facility status toggled successfully"})
 }
 
+func (h *FacilityHandler) UpdateFacility(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid ID"})
+		return
+	}
+
+	var req dto.CreateFacilityDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	claims, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+		return
+	}
+
+	err = h.service.UpdateFacility(
+		id,
+		req.Name,
+		req.SportComplexID,
+		req.CategoryID,
+		req.SurfaceID,
+		req.EnvironmentID,
+		req.City,
+		req.Address,
+		req.Description,
+		req.Capacity,
+		claims.UserID,
+	)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		// Check if it's an authorization error
+		if err.Error() == "unauthorized: you do not own this facility" {
+			w.WriteHeader(http.StatusForbidden)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Facility updated successfully"})
+}
+
 func (h *FacilityHandler) GetCategories(w http.ResponseWriter, r *http.Request) {
 	categories, err := h.metadataRepo.GetCategories()
 	if err != nil {
