@@ -15,6 +15,7 @@ import SportComplexes from "./pages/SportComplexes";
 import SportComplexDetails from "./pages/SportComplexDetails";
 import Facilities from "./pages/Facilities";
 import FacilityDetails from "./pages/FacilityDetails";
+import EditFacility from "./pages/EditFacility";
 import ManageFacilities from "./pages/ManageFacilities";
 import BecomeManager from "./pages/BecomeManager";
 import AdminPanel from "./pages/AdminPanel";
@@ -103,6 +104,16 @@ function App() {
                         <Route path="/sport-complexes/:id" element={<SportComplexDetails />} />
                         <Route path="/facilities" element={<Facilities />} />
                         <Route path="/facilities/:id" element={<FacilityDetails />} />
+                        
+                        {/* Protected facility edit route */}
+                        <Route
+                            path="/facilities/:id/edit"
+                            element={
+                                <ProtectedRoute>
+                                    <EditFacility />
+                                </ProtectedRoute>
+                            }
+                        />
                     </Routes>
                 </div>
             </Router>

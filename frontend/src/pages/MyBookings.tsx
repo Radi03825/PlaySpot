@@ -23,12 +23,27 @@ export default function MyBookings() {
     const [error, setError] = useState("");
     const [cancellingId, setCancellingId] = useState<number | null>(null);
     const [filter, setFilter] = useState<'all' | 'upcoming' | 'past' | 'cancelled'>('upcoming');
+    const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+    const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+    const [processingPayment, setProcessingPayment] = useState(false);
+    const [showNewBookingMessage, setShowNewBookingMessage] = useState(false);
 
     useEffect(() => {
         if (!user) {
             navigate('/login');
             return;
         }
+        
+        // Check if coming from a new booking
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('new') === 'true') {
+            setShowNewBookingMessage(true);
+            // Remove the query parameter
+            window.history.replaceState({}, '', '/my-bookings');
+            // Hide message after 5 seconds
+            setTimeout(() => setShowNewBookingMessage(false), 5000);
+        }
+        
         fetchReservations();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
@@ -81,14 +96,52 @@ export default function MyBookings() {
                     }
                     return reservation;
                 })
-            );
-
-            setReservations(reservationsWithDetails);
+            );            setReservations(reservationsWithDetails);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load reservations');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handlePayment = async (paymentMethod: 'on_place' | 'card') => {
+        if (!selectedReservation) return;
+
+        try {
+            setProcessingPayment(true);
+            const token = localStorage.getItem('token');
+
+            const response = await fetch(`http://localhost:8081/api/reservations/${selectedReservation.id}/pay`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ payment_method: paymentMethod }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to process payment');
+            }
+
+            // Refresh reservations and close modal
+            await fetchReservations();
+            setPaymentModalOpen(false);
+            setSelectedReservation(null);
+            
+            // Show success message
+            alert('Payment successful! Check your email for confirmation.');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to process payment');
+        } finally {
+            setProcessingPayment(false);
+        }
+    };
+
+    const openPaymentModal = (reservation: Reservation) => {
+        setSelectedReservation(reservation);
+        setPaymentModalOpen(true);
     };
 
     const handleCancelReservation = async (reservationId: number) => {
@@ -172,16 +225,20 @@ export default function MyBookings() {
                 case 'upcoming':
                     return startTime > now && reservation.status !== 'cancelled';
                 case 'past':
-                    return startTime <= now && reservation.status !== 'cancelled';
-                case 'cancelled':
+                    return startTime <= now && reservation.status !== 'cancelled';                case 'cancelled':
                     return reservation.status === 'cancelled';
                 case 'all':
                 default:
                     return true;
             }
         }).sort((a, b) => {
-            // Sort by start time, most recent first
-            return new Date(b.start_time).getTime() - new Date(a.start_time).getTime();
+            // For upcoming events, sort by earliest first (ascending)
+            // For past and other events, sort by most recent first (descending)
+            if (filter === 'upcoming') {
+                return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+            } else {
+                return new Date(b.start_time).getTime() - new Date(a.start_time).getTime();
+            }
         });
     };
 
@@ -197,12 +254,17 @@ export default function MyBookings() {
                 <div className="page-header">
                     <h1>My Bookings</h1>
                     <p>View and manage your facility reservations</p>
-                </div>
-
-                {error && (
+                </div>                {error && (
                     <div className="error-banner">
                         <span>{error}</span>
                         <button onClick={() => setError("")}>&times;</button>
+                    </div>
+                )}
+
+                {showNewBookingMessage && (
+                    <div className="success-banner">
+                        <span>✅ Booking created successfully! Please complete payment to confirm your reservation.</span>
+                        <button onClick={() => setShowNewBookingMessage(false)}>&times;</button>
                     </div>
                 )}
 
@@ -252,12 +314,13 @@ export default function MyBookings() {
                             Browse Facilities
                         </button>
                     </div>
-                ) : (
-                    <div className="bookings-list">
+                ) : (                    <div className="bookings-list">
                         {filteredReservations.map((reservation) => {
                             const isPast = new Date(reservation.start_time) <= new Date();
                             const isCancelled = reservation.status === 'cancelled';
+                            const isPending = reservation.status === 'pending';
                             const canCancel = !isPast && !isCancelled;
+                            const canPay = isPending && !isPast && !isCancelled;
 
                             return (
                                 <div
@@ -316,15 +379,21 @@ export default function MyBookings() {
                                                 <span className="detail-value">{formatDateTime(reservation.created_at)}</span>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div className="booking-actions">
+                                    </div>                                    <div className="booking-actions">
                                         <button
                                             className="btn-secondary"
                                             onClick={() => handleViewFacility(reservation.facility_id)}
                                         >
                                             View Facility
                                         </button>
+                                        {canPay && (
+                                            <button
+                                                className="btn-primary"
+                                                onClick={() => openPaymentModal(reservation)}
+                                            >
+                                                Pay Now
+                                            </button>
+                                        )}
                                         {canCancel && (
                                             <button
                                                 className="btn-danger"
@@ -336,8 +405,72 @@ export default function MyBookings() {
                                         )}
                                     </div>
                                 </div>
-                            );
-                        })}
+                            );                        })}
+                    </div>
+                )}
+
+                {/* Payment Modal */}
+                {paymentModalOpen && selectedReservation && (
+                    <div className="modal-overlay" onClick={() => setPaymentModalOpen(false)}>
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h2>Complete Payment</h2>
+                                <button 
+                                    className="close-button" 
+                                    onClick={() => setPaymentModalOpen(false)}
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="payment-summary">
+                                    <h3>{selectedReservation.facility_name}</h3>
+                                    <p className="payment-detail">
+                                        📅 {formatDate(selectedReservation.start_time)}
+                                    </p>
+                                    <p className="payment-detail">
+                                        🕐 {formatTime(selectedReservation.start_time)} - {formatTime(selectedReservation.end_time)}
+                                    </p>
+                                    <div className="payment-amount">
+                                        <span>Total Amount:</span>
+                                        <strong>€{selectedReservation.total_price.toFixed(2)}</strong>
+                                    </div>
+                                </div>
+
+                                <div className="payment-methods">
+                                    <h3>Select Payment Method</h3>
+                                    <div className="payment-buttons">
+                                        <button
+                                            className="payment-method-btn"
+                                            onClick={() => handlePayment('on_place')}
+                                            disabled={processingPayment}
+                                        >
+                                            <div className="payment-icon">🏢</div>
+                                            <div className="payment-text">
+                                                <strong>Pay On Place</strong>
+                                                <small>Pay at the facility</small>
+                                            </div>
+                                        </button>
+                                        <button
+                                            className="payment-method-btn"
+                                            onClick={() => handlePayment('card')}
+                                            disabled={processingPayment}
+                                        >
+                                            <div className="payment-icon">💳</div>
+                                            <div className="payment-text">
+                                                <strong>Pay With Card</strong>
+                                                <small>Secure online payment</small>
+                                            </div>
+                                        </button>
+                                    </div>
+                                    {processingPayment && (
+                                        <div className="processing-message">
+                                            Processing payment...
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>

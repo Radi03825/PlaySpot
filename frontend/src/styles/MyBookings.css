@@ -47,6 +47,39 @@
     padding: 0 0.5rem;
 }
 
+.success-banner {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: slideDown 0.3s ease-out;
+}
+
+.success-banner button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #155724;
+    cursor: pointer;
+    padding: 0 0.5rem;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .bookings-filters {
     display: flex;
     gap: 1rem;
@@ -242,37 +275,57 @@
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
+    align-items: center;
+}
+
+.booking-actions > * {
+    margin: 0;
 }
 
 .btn-primary,
 .btn-secondary,
 .btn-danger {
     padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 500;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s;
+    min-width: 150px;
+    text-align: center;
+    box-sizing: border-box;
+    white-space: nowrap;
+    height: 44px;
+    line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin: 0;
+    vertical-align: middle;
 }
 
 .btn-primary {
     background-color: #4CAF50;
     color: white;
+    border-color: #4CAF50;
 }
 
 .btn-primary:hover {
     background-color: #45a049;
+    border-color: #45a049;
 }
 
 .btn-secondary {
     background-color: #f5f5f5;
     color: #333;
-    border: 1px solid #ddd;
+    border-color: #ddd;
 }
 
 .btn-secondary:hover {
     background-color: #e0e0e0;
+    border-color: #ccc;
 }
 
 .btn-danger {
@@ -323,14 +376,13 @@
     .booking-header {
         flex-direction: column;
         gap: 1rem;
-    }
-
-    .booking-actions {
+    }    .booking-actions {
         flex-direction: column;
     }
 
     .booking-actions button {
         width: 100%;
+        max-width: 100%;
     }
 
     .detail-row {
@@ -391,6 +443,189 @@
     .bookings-filters button,
     .booking-actions button {
         min-height: 44px;
+    }
+}
+
+/* Payment Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #1a1a1a;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.close-button:hover {
+    background-color: #f0f0f0;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.payment-summary {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.payment-summary h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.25rem;
+    color: #1a1a1a;
+}
+
+.payment-detail {
+    margin: 0.5rem 0;
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.payment-amount {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 2px solid #e0e0e0;
+    font-size: 1.1rem;
+}
+
+.payment-amount strong {
+    color: #4CAF50;
+    font-size: 1.5rem;
+}
+
+.payment-methods h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    color: #1a1a1a;
+}
+
+.payment-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.payment-method-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    border: 2px solid #e0e0e0;
+    background-color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+}
+
+.payment-method-btn:hover:not(:disabled) {
+    border-color: #4CAF50;
+    background-color: #f0f8f0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
+.payment-method-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.payment-icon {
+    font-size: 2rem;
+    min-width: 50px;
+    text-align: center;
+}
+
+.payment-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.payment-text strong {
+    font-size: 1.1rem;
+    color: #1a1a1a;
+}
+
+.payment-text small {
+    color: #666;
+    font-size: 0.875rem;
+}
+
+.processing-message {
+    text-align: center;
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #fff3cd;
+    border-radius: 8px;
+    color: #856404;
+    font-weight: 500;
+}
+
+/* Responsive Modal */
+@media (max-width: 600px) {
+    .modal-content {
+        margin: 0;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .payment-method-btn {
+        padding: 1rem;
+    }
+
+    .payment-icon {
+        font-size: 1.75rem;
+        min-width: 40px;
     }
 }
 

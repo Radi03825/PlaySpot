@@ -293,9 +293,7 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
                             <span>Total Price:</span>
                             <span>€{totalPrice.toFixed(2)}</span>
                         </div>
-                    </div>
-                    <div className="modal-actions">
-                        <button className="btn-cancel" onClick={onClose}>Cancel</button>
+                    </div>                    <div className="modal-actions">
                         <button
                             className="btn-book"
                             onClick={handleBooking}

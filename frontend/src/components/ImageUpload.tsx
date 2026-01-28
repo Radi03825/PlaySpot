@@ -130,8 +130,7 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
     <div className="image-upload">
       {title && <div className="image-upload-title">{title}</div>}
       
-      <div className={title ? "image-upload-container" : ""}>
-        <div className="upload-section">
+      <div className={title ? "image-upload-container" : ""}>        <div className="upload-section">
           <label htmlFor="image-input" className="upload-label">
             <input
               id="image-input"
@@ -151,6 +150,27 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
               Select Images ({selectedFiles.length}/{maxImages})
             </button>
           </label>
+          
+          {selectedFiles.length > 0 && uploadedUrls.length === 0 && (
+            <button
+              type="button"
+              onClick={uploadImages}
+              disabled={uploading}
+              className="upload-images-btn"
+              style={{
+                marginLeft: '10px',
+                padding: '10px 20px',
+                backgroundColor: '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: uploading ? 'not-allowed' : 'pointer',
+                opacity: uploading ? 0.6 : 1
+              }}
+            >
+              {uploading ? 'Uploading...' : `Upload ${selectedFiles.length} Image${selectedFiles.length > 1 ? 's' : ''}`}
+            </button>
+          )}
         </div>
 
         {error && <div className="error-message">{error}</div>}

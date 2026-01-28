@@ -412,6 +412,29 @@ export async function createFacility(facilityData: {
     });
 }
 
+export async function updateFacility(facilityId: number, facilityData: {
+    name: string;
+    sport_complex_id?: number | null;
+    category_id: number;
+    surface_id: number;
+    environment_id: number;
+    description: string;
+    capacity: number;
+    city?: string;
+    address?: string;
+}) {
+    return authenticatedFetch(`/facilities/${facilityId}`, {
+        method: "PUT",
+        body: JSON.stringify(facilityData),
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to update facility");
+        }
+        return data;
+    });
+}
+
 export async function getCategories() {
     const response = await fetch(`${API_URL}/facilities/metadata/categories`, {
         method: "GET",

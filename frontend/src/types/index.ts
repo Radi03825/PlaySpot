@@ -31,6 +31,7 @@ export interface FacilityDetails extends Facility {
     sport_complex_name?: string;
     city?: string;
     address?: string;
+    manager_id?: number;
     manager_name?: string;
     manager_email?: string;
     images?: Image[];

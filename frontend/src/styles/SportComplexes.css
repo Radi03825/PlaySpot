@@ -1,0 +1,213 @@
+/* Sport Complexes Page Styles */
+.sport-complexes-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.sport-complexes-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.sport-complexes-header h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.sport-complexes-header p {
+    font-size: 1.1rem;
+    color: #666;
+}
+
+.sport-complexes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+.complex-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.complex-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.complex-card-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background: #f0f0f0;
+}
+
+.complex-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.complex-card:hover .complex-card-image img {
+    transform: scale(1.1);
+}
+
+.complex-card-header {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+}
+
+.complex-card-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #000;
+    font-weight: bold;
+}
+
+.verified-badge {
+    color: #4CAF50;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+}
+
+.complex-card-body {
+    padding: 1.5rem;
+    flex-grow: 1;
+}
+
+.complex-location {
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+}
+
+.complex-address {
+    color: #666;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+
+.complex-description {
+    color: #555;
+    line-height: 1.6;
+    margin-top: 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.complex-card-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.view-details-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.view-details-btn:hover {
+    opacity: 0.9;
+}
+
+.loading,
+.error,
+.no-data {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.1rem;
+    color: #666;
+}
+
+.error {
+    color: #d32f2f;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1200px) {
+    .sport-complexes-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .sport-complexes-container {
+        padding: 1rem;
+    }
+
+    .sport-complexes-header h1 {
+        font-size: 2rem;
+    }
+
+    .sport-complexes-header p {
+        font-size: 1rem;
+    }
+
+    .sport-complexes-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .complex-card-header h3 {
+        font-size: 1.2rem;
+    }
+
+    .complex-card-image {
+        height: 180px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sport-complexes-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .complex-card-header {
+        padding: 1rem;
+    }
+
+    .complex-card-body {
+        padding: 1rem;
+    }
+
+    .complex-card-footer {
+        padding: 0.75rem 1rem;
+    }
+
+    .complex-card-image {
+        height: 160px;
+    }
+}

@@ -5,27 +5,130 @@
     padding: 2rem;
 }
 
+.complex-title-section {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.complex-title-section h1 {
+    font-size: 2.5rem;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.verified-badge {
+    color: #4CAF50;
+    font-size: 1.5rem;
+}
+
+/* Image Gallery Styles */
+.complex-gallery {
+    margin-bottom: 2rem;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.main-image {
+    width: 100%;
+    height: 500px;
+    overflow: hidden;
+    cursor: zoom-in;
+    position: relative;
+    background: #f0f0f0;
+}
+
+.main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.main-image:hover img {
+    transform: scale(1.05);
+}
+
+.image-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+    padding: 1.5rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.main-image:hover .image-overlay {
+    opacity: 1;
+}
+
+.zoom-icon {
+    color: white;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.thumbnail-strip {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem;
+    overflow-x: auto;
+    background: #fafafa;
+}
+
+.thumbnail {
+    min-width: 100px;
+    width: 100px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.thumbnail:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+}
+
+.thumbnail.active {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.thumbnail .primary-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #4CAF50;
+    color: white;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
 .complex-info-section {
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     padding: 2rem;
     margin-bottom: 2rem;
-}
-
-.complex-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #f0f0f0;
-}
-
-.complex-header h1 {
-    font-size: 2.5rem;
-    color: #333;
-    margin: 0;
 }
 
 .complex-details {
@@ -113,6 +216,21 @@
         font-size: 1.8rem;
     }
 
+    .main-image {
+        height: 350px;
+    }
+
+    .thumbnail-strip {
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    .thumbnail {
+        min-width: 80px;
+        width: 80px;
+        height: 60px;
+    }
+
     .facilities-grid {
         grid-template-columns: 1fr;
     }
@@ -139,6 +257,21 @@
 @media (max-width: 480px) {
     .sport-complex-details-container {
         padding: 1rem;
+    }
+
+    .main-image {
+        height: 250px;
+    }
+
+    .thumbnail-strip {
+        gap: 0.4rem;
+        padding: 0.5rem;
+    }
+
+    .thumbnail {
+        min-width: 70px;
+        width: 70px;
+        height: 50px;
     }
 
     .complex-info-section {

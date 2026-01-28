@@ -4,6 +4,7 @@ import type { FacilityDetails } from "../types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleCheck } from "@fortawesome/free-solid-svg-icons";
 import { getEntityImages } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import "../styles/FacilityCard.css";
 
 interface FacilityCardProps {
@@ -12,7 +13,10 @@ interface FacilityCardProps {
 
 const FacilityCard = ({ facility }: FacilityCardProps) => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [primaryImage, setPrimaryImage] = useState<string | null>(null);
+
+    const isOwner = user && facility.manager_id === user.id;
 
     useEffect(() => {
         const fetchImage = async () => {
@@ -29,19 +33,17 @@ const FacilityCard = ({ facility }: FacilityCardProps) => {
         };
 
         fetchImage();
-    }, [facility.id]);
-
-    const handleClick = () => {
+    }, [facility.id]);    const handleClick = () => {
         navigate(`/facilities/${facility.id}`);
+    };
+
+    const handleEditClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigate(`/facilities/${facility.id}/edit`);
     };
 
     return (
         <div className="facility-card" onClick={handleClick}>
-            {primaryImage && (
-                <div className="facility-card-image">
-                    <img src={primaryImage} alt={facility.name} />
-                </div>
-            )}
             <div className="facility-card-header">
                 <h3>{facility.name}</h3>
                 {facility.is_verified && (
@@ -50,6 +52,12 @@ const FacilityCard = ({ facility }: FacilityCardProps) => {
                     </span>
                 )}
             </div>
+            
+            {primaryImage && (
+                <div className="facility-card-image">
+                    <img src={primaryImage} alt={facility.name} />
+                </div>
+            )}
 
             <div className="facility-card-body">
                 <div className="facility-tags">
@@ -80,9 +88,16 @@ const FacilityCard = ({ facility }: FacilityCardProps) => {
                         {facility.sport_complex_name}
                     </p>
                 )}
-            </div>
-
-            <div className="facility-card-footer">
+            </div>            <div className="facility-card-footer">
+                {isOwner && (
+                    <button 
+                        className="edit-btn" 
+                        onClick={handleEditClick}
+                        title="Edit this facility"
+                    >
+                        ✏️ Edit
+                    </button>
+                )}
                 <button className="view-btn">View Details →</button>
             </div>
         </div>
