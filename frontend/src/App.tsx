@@ -20,6 +20,10 @@ import ManageFacilities from "./pages/ManageFacilities";
 import BecomeManager from "./pages/BecomeManager";
 import AdminPanel from "./pages/AdminPanel";
 import MyBookings from "./pages/MyBookings";
+import Events from "./pages/Events";
+import EventDetails from "./pages/EventDetails";
+import CreateEventForm from "./pages/CreateEventForm";
+import EditEventForm from "./pages/EditEventForm";
 
 function App() {
     return (
@@ -104,13 +108,35 @@ function App() {
                         <Route path="/sport-complexes/:id" element={<SportComplexDetails />} />
                         <Route path="/facilities" element={<Facilities />} />
                         <Route path="/facilities/:id" element={<FacilityDetails />} />
-                        
+
+                        {/* Events routes - public viewing */}
+                        <Route path="/events" element={<Events />} />
+                        <Route path="/events/:id" element={<EventDetails />} />
+
                         {/* Protected facility edit route */}
                         <Route
                             path="/facilities/:id/edit"
                             element={
                                 <ProtectedRoute>
                                     <EditFacility />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Protected event routes */}
+                        <Route
+                            path="/events/create"
+                            element={
+                                <ProtectedRoute>
+                                    <CreateEventForm />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/events/:id/edit"
+                            element={
+                                <ProtectedRoute>
+                                    <EditEventForm />
                                 </ProtectedRoute>
                             }
                         />

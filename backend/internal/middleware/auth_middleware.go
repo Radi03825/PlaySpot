@@ -77,6 +77,24 @@ func GetUserFromContext(ctx context.Context) (*UserClaims, bool) {
 	return claims, ok
 }
 
+// GetUserID extracts the user ID from the request context
+func GetUserID(r *http.Request) (int64, bool) {
+	claims, ok := GetUserFromContext(r.Context())
+	if !ok {
+		return 0, false
+	}
+	return claims.UserID, true
+}
+
+// GetUserRoleID extracts the user role ID from the request context
+func GetUserRoleID(r *http.Request) (int64, bool) {
+	claims, ok := GetUserFromContext(r.Context())
+	if !ok {
+		return 0, false
+	}
+	return claims.RoleID, true
+}
+
 func AdminRoleMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := GetUserFromContext(r.Context())

@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.FacilityHandler, sportComplexHandler *handler.SportComplexHandler, reservationHandler *handler.ReservationHandler, imageHandler *handler.ImageHandler, paymentHandler *handler.PaymentHandler) *mux.Router {
+func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.FacilityHandler, sportComplexHandler *handler.SportComplexHandler, reservationHandler *handler.ReservationHandler, imageHandler *handler.ImageHandler, paymentHandler *handler.PaymentHandler, eventHandler *handler.EventHandler) *mux.Router {
 	router := mux.NewRouter()
 	api := router.PathPrefix("/api").Subrouter()
 
@@ -40,6 +40,11 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	// Public image routes (allow viewing images without authentication)
 	api.HandleFunc("/images/{entityType}/{entityId:[0-9]+}", imageHandler.GetEntityImages).Methods("GET")
 
+	// Public event routes (viewing events)
+	api.HandleFunc("/events", eventHandler.GetAllEvents).Methods("GET")
+	api.HandleFunc("/events/{id:[0-9]+}", eventHandler.GetEventByID).Methods("GET")
+	api.HandleFunc("/events/{id:[0-9]+}/participants", eventHandler.GetEventParticipants).Methods("GET")
+
 	// Protected routes (require authentication)
 	protected := api.PathPrefix("").Subrouter()
 	protected.Use(middleware.JWTAuthMiddleware)
@@ -69,6 +74,15 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	// Payment routes (authenticated users)
 	protected.HandleFunc("/reservations/{id:[0-9]+}/payment", paymentHandler.GetPaymentByReservation).Methods("GET")
 	protected.HandleFunc("/reservations/{id:[0-9]+}/pay", paymentHandler.ProcessPayment).Methods("POST")
+
+	// Event routes (authenticated users)
+	protected.HandleFunc("/events", eventHandler.CreateEvent).Methods("POST")
+	protected.HandleFunc("/events/{id:[0-9]+}", eventHandler.UpdateEvent).Methods("PUT")
+	protected.HandleFunc("/events/{id:[0-9]+}", eventHandler.DeleteEvent).Methods("DELETE")
+	protected.HandleFunc("/events/{id:[0-9]+}/join", eventHandler.JoinEvent).Methods("POST")
+	protected.HandleFunc("/events/{id:[0-9]+}/leave", eventHandler.LeaveEvent).Methods("POST")
+	protected.HandleFunc("/users/me/events", eventHandler.GetUserEvents).Methods("GET")
+	protected.HandleFunc("/users/me/events/joined", eventHandler.GetUserJoinedEvents).Methods("GET")
 
 	// Admin routes - manage all pending items
 	adminRoutes := protected.PathPrefix("/admin").Subrouter()

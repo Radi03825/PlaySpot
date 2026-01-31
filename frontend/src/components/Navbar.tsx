@@ -36,6 +36,9 @@ export default function Navbar() {
                 <Link to="/facilities" className="navbar-link">
                     Facilities
                 </Link>
+                <Link to="/events" className="navbar-link">
+                    Events
+                </Link>
                 {isAuthenticated ? (
                     <>
                         {user?.role_id === 1 && (

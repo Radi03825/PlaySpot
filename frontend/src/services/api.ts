@@ -676,3 +676,166 @@ export async function cancelReservation(reservationId: number) {
     });
 }
 
+// Event API
+export async function getAllEvents(status?: string, sportId?: number) {
+    const params = new URLSearchParams();
+    if (status) params.append("status", status);
+    if (sportId) params.append("sport_id", sportId.toString());
+
+    const queryString = params.toString();
+    const url = `/events${queryString ? `?${queryString}` : ''}`;
+
+    const response = await fetch(`${API_URL}${url}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch events");
+    }
+
+    return data;
+}
+
+export async function getEventById(eventId: number) {
+    const response = await fetch(`${API_URL}/events/${eventId}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch event");
+    }
+
+    return data;
+}
+
+export async function createEvent(eventData: {
+    title: string;
+    description?: string;
+    sport_id: number;
+    start_time: string;
+    end_time: string;
+    max_participants: number;
+    facility_id?: number;
+    address?: string;
+    related_booking_id?: number;
+}) {
+    return authenticatedFetch("/events", {
+        method: "POST",
+        body: JSON.stringify(eventData),
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to create event");
+        }
+        return data;
+    });
+}
+
+export async function updateEvent(eventId: number, updateData: {
+    title?: string;
+    description?: string;
+    sport_id?: number;
+    start_time?: string;
+    end_time?: string;
+    max_participants?: number;
+    status?: string;
+    facility_id?: number;
+    address?: string;
+}) {
+    return authenticatedFetch(`/events/${eventId}`, {
+        method: "PUT",
+        body: JSON.stringify(updateData),
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to update event");
+        }
+        return data;
+    });
+}
+
+export async function deleteEvent(eventId: number) {
+    return authenticatedFetch(`/events/${eventId}`, {
+        method: "DELETE",
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to delete event");
+        }
+        return data;
+    });
+}
+
+export async function joinEvent(eventId: number) {
+    return authenticatedFetch(`/events/${eventId}/join`, {
+        method: "POST",
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to join event");
+        }
+        return data;
+    });
+}
+
+export async function leaveEvent(eventId: number) {
+    return authenticatedFetch(`/events/${eventId}/leave`, {
+        method: "POST",
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to leave event");
+        }
+        return data;
+    });
+}
+
+export async function getEventParticipants(eventId: number) {
+    const response = await fetch(`${API_URL}/events/${eventId}/participants`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch event participants");
+    }
+
+    return data;
+}
+
+export async function getMyEvents() {
+    return authenticatedFetch("/users/me/events", {
+        method: "GET",
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to fetch user events");
+        }
+        return data;
+    });
+}
+
+export async function getMyJoinedEvents() {
+    return authenticatedFetch("/users/me/events/joined", {
+        method: "GET",
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to fetch joined events");
+        }
+        return data;
+    });
+}
+
+

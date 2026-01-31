@@ -182,3 +182,43 @@ CREATE TABLE IF NOT EXISTS payments (
     paid_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+-- 15. CREATE EVENTS TABLE
+CREATE TABLE IF NOT EXISTS events (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    sport_id BIGINT NOT NULL REFERENCES sports(id) ON DELETE CASCADE,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    max_participants INTEGER NOT NULL,
+    status VARCHAR(50) NOT NULL CHECK (status IN ('UPCOMING', 'FULL', 'CANCELED', 'COMPLETED')) DEFAULT 'UPCOMING',
+    organizer_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    facility_id BIGINT REFERENCES facilities(id) ON DELETE SET NULL,
+    address TEXT,
+    related_booking_id BIGINT REFERENCES facility_reservations(id) ON DELETE SET NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+
+-- Create indexes for events table
+CREATE INDEX IF NOT EXISTS idx_events_sport_id ON events(sport_id);
+CREATE INDEX IF NOT EXISTS idx_events_organizer_id ON events(organizer_id);
+CREATE INDEX IF NOT EXISTS idx_events_facility_id ON events(facility_id);
+CREATE INDEX IF NOT EXISTS idx_events_status ON events(status);
+CREATE INDEX IF NOT EXISTS idx_events_start_time ON events(start_time);
+
+-- 16. CREATE EVENT_PARTICIPANTS TABLE
+CREATE TABLE IF NOT EXISTS event_participants (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    event_id BIGINT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    joined_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    status VARCHAR(50) NOT NULL CHECK (status IN ('JOINED', 'LEFT', 'REMOVED')) DEFAULT 'JOINED',
+    CONSTRAINT unique_event_participant UNIQUE (event_id, user_id)
+    );
+
+-- Create indexes for event_participants table
+CREATE INDEX IF NOT EXISTS idx_event_participants_event_id ON event_participants(event_id);
+CREATE INDEX IF NOT EXISTS idx_event_participants_user_id ON event_participants(user_id);
+CREATE INDEX IF NOT EXISTS idx_event_participants_status ON event_participants(status);

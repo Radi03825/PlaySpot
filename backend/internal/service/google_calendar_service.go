@@ -61,7 +61,7 @@ func (s *GoogleCalendarService) getCalendarService(accessToken, refreshToken str
 func (s *GoogleCalendarService) CreateEvent(
 	accessToken, refreshToken string,
 	tokenExpiry time.Time,
-	facilityName, description string,
+	facilityName, description, location string,
 	startTime, endTime time.Time,
 ) (string, error) {
 	service, err := s.getCalendarService(accessToken, refreshToken, tokenExpiry)
@@ -72,6 +72,7 @@ func (s *GoogleCalendarService) CreateEvent(
 	event := &calendar.Event{
 		Summary:     fmt.Sprintf("PlaySpot Booking - %s", facilityName),
 		Description: description,
+		Location:    location,
 		Start: &calendar.EventDateTime{
 			DateTime: startTime.Format(time.RFC3339),
 			TimeZone: "Europe/Sofia", // Bulgaria timezone

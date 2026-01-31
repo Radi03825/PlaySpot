@@ -1,3 +1,15 @@
+export interface Image {
+    id: number;
+    url: string;
+    storage_id?: string;
+    storage_provider: string;
+    image_type: string;
+    reference_id: number;
+    owner_id?: number;
+    is_primary: boolean;
+    uploaded_at: string;
+}
+
 export interface SportComplex {
     id: number;
     name: string;
@@ -129,15 +141,59 @@ export interface CreateReservationRequest {
     end_time: string;
 }
 
-export interface Image {
+export interface Event {
     id: number;
-    url: string;
-    storage_id?: string;
-    storage_provider: string;
-    image_type: string;
-    reference_id: number;
-    owner_id?: number;
-    is_primary: boolean;
-    uploaded_at: string;
+    title: string;
+    description?: string;
+    sport_id: number;
+    start_time: string;
+    end_time: string;
+    max_participants: number;
+    status: 'UPCOMING' | 'FULL' | 'CANCELED' | 'COMPLETED';
+    organizer_id: number;
+    facility_id?: number;
+    address?: string;
+    related_booking_id?: number;
+    created_at: string;
+    updated_at: string;
+    organizer?: User;
+    sport?: Sport;
+    facility?: FacilityDetails;
+    current_participants: number;
+    is_user_joined?: boolean;
 }
+
+export interface EventParticipant {
+    id: number;
+    event_id: number;
+    user_id: number;
+    joined_at: string;
+    status: 'JOINED' | 'LEFT' | 'REMOVED';
+    user?: User;
+}
+
+export interface CreateEventRequest {
+    title: string;
+    description?: string;
+    sport_id: number;
+    start_time: string;
+    end_time: string;
+    max_participants: number;
+    facility_id?: number;
+    address?: string;
+    related_booking_id?: number;
+}
+
+export interface UpdateEventRequest {
+    title?: string;
+    description?: string;
+    sport_id?: number;
+    start_time?: string;
+    end_time?: string;
+    max_participants?: number;
+    status?: 'UPCOMING' | 'FULL' | 'CANCELED' | 'COMPLETED';
+    facility_id?: number;
+    address?: string;
+}
+
 
