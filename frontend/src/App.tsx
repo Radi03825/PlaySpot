@@ -19,7 +19,7 @@ import EditFacility from "./pages/EditFacility";
 import ManageFacilities from "./pages/ManageFacilities";
 import BecomeManager from "./pages/BecomeManager";
 import AdminPanel from "./pages/AdminPanel";
-import MyBookings from "./pages/MyBookings";
+import MyActivity from "./pages/MyActivity";
 import Events from "./pages/Events";
 import EventDetails from "./pages/EventDetails";
 import CreateEventForm from "./pages/CreateEventForm";
@@ -71,10 +71,19 @@ function App() {
                             }
                         />
                         <Route
+                            path="/my-activity"
+                            element={
+                                <ProtectedRoute>
+                                    <MyActivity />
+                                </ProtectedRoute>
+                            }
+                        />
+                        {/* Legacy route - redirect to new my-activity page */}
+                        <Route
                             path="/my-bookings"
                             element={
                                 <ProtectedRoute>
-                                    <MyBookings />
+                                    <MyActivity />
                                 </ProtectedRoute>
                             }
                         />

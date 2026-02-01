@@ -45,14 +45,13 @@ export default function Navbar() {
                             <Link to="/admin" className="navbar-link admin">
                                 Admin Panel
                             </Link>
-                        )}
-                        {user?.role_id === 3 && (
+                        )}                        {user?.role_id === 3 && (
                             <Link to="/manage-facilities" className="navbar-link manage">
                                 Manage Facilities
                             </Link>
                         )}
-                        <Link to="/my-bookings" className="navbar-link bookings">
-                            My Bookings
+                        <Link to="/my-activity" className="navbar-link bookings">
+                            My Activity
                         </Link>
                         <div className="navbar-menu-container">
                             <button onClick={toggleMenu} className="navbar-menu-button" aria-label="Menu">

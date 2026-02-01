@@ -75,7 +75,7 @@ export default function FacilityDetailsPage() {
 
     const handleBookingSuccess = () => {
         // Redirect to My Bookings page with success indicator
-        navigate('/my-bookings?new=true');
+        navigate('/my-activity?new=true');
     };    const handleToggleStatus = async () => {
         if (!facility || !user) return;
         
