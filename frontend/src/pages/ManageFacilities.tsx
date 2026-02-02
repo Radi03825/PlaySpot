@@ -151,10 +151,7 @@ export default function ManageFacilities() {
                                 onClick={() => handleTypeChange("facility")}
                             >
                                 Standalone Facility
-                            </button>
-                        </div>
-
-                        {createType === "complex" ? (
+                            </button>                        </div>                        {createType === "complex" ? (
                             <CreateSportComplexForm
                                 onSuccess={handleSuccess}
                                 onError={handleError}

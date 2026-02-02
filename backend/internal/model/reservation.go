@@ -2,23 +2,6 @@ package model
 
 import "time"
 
-type FacilitySchedule struct {
-	ID         int64  `json:"id"`
-	FacilityID int64  `json:"facility_id"`
-	OpenTime   string `json:"open_time"`
-	CloseTime  string `json:"close_time"`
-	DayType    string `json:"day_type"` // 'weekday' or 'weekend'
-}
-
-type FacilityPricing struct {
-	ID           int64   `json:"id"`
-	FacilityID   int64   `json:"facility_id"`
-	DayType      string  `json:"day_type"` // 'weekday' or 'weekend'
-	StartHour    string  `json:"start_hour"`
-	EndHour      string  `json:"end_hour"`
-	PricePerHour float64 `json:"price_per_hour"`
-}
-
 type FacilityReservation struct {
 	ID                    int64     `json:"id"`
 	UserID                int64     `json:"user_id"`

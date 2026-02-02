@@ -41,7 +41,7 @@ func (s *SportComplexService) CreateSportComplex(dto dto.CreateSportComplexDTO, 
 	// Create associated facilities if provided
 	if len(dto.Facilities) > 0 {
 		for _, facilityDTO := range dto.Facilities {
-			facility, err := s.facilityService.CreateFacilityWithoutImages(
+			facility, err := s.facilityService.CreateFacilityWithoutImagesAndSchedule(
 				facilityDTO.Name,
 				&complex.ID,
 				facilityDTO.CategoryID,
@@ -52,6 +52,8 @@ func (s *SportComplexService) CreateSportComplex(dto dto.CreateSportComplexDTO, 
 				facilityDTO.Description,
 				facilityDTO.Capacity,
 				managerID,
+				facilityDTO.WorkingHours,
+				facilityDTO.Pricing,
 			)
 			if err != nil {
 				// Log error but continue creating other facilities

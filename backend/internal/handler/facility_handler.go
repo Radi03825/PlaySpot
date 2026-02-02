@@ -134,7 +134,7 @@ func (h *FacilityHandler) CreateFacility(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	facility, err := h.service.CreateFacility(
+	facility, err := h.service.CreateFacilityWithScheduleAndPricing(
 		req.Name,
 		req.SportComplexID,
 		req.CategoryID,
@@ -146,6 +146,8 @@ func (h *FacilityHandler) CreateFacility(w http.ResponseWriter, r *http.Request)
 		req.Capacity,
 		claims.UserID,
 		req.ImageURLs,
+		req.WorkingHours,
+		req.Pricing,
 	)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")

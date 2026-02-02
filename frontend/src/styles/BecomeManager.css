@@ -92,10 +92,67 @@
     font-size: 1.1rem;
 }
 
+.requirements-box {
+    background: #f0f8ff;
+    border: 2px solid #3498db;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 2rem auto;
+    max-width: 600px;
+    text-align: left;
+}
+
+.requirements-box h3 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+}
+
+.requirements-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem 0;
+}
+
+.requirements-list li {
+    padding: 0.5rem 0 0.5rem 1.5rem;
+    position: relative;
+    color: #34495e;
+    line-height: 1.6;
+}
+
+.requirements-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #27ae60;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.requirements-list li strong {
+    color: #2980b9;
+}
+
+.requirements-note {
+    background: #fff3cd;
+    border-left: 3px solid #ffc107;
+    padding: 0.75rem;
+    margin: 1rem 0 0 0;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    color: #856404;
+}
+
+.requirements-note strong {
+    color: #856404;
+}
+
 .btn-large {
     padding: 1rem 2.5rem;
     font-size: 1.1rem;
     font-weight: 600;
+    margin-top: 1rem;
 }
 
 .waiting-list-section {
@@ -208,6 +265,36 @@
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
+}
+
+.wizard-info {
+    background: #e8f5e9;
+    border-left: 4px solid #4caf50;
+    padding: 1rem 1.5rem;
+    margin: 1rem 0 1.5rem 0;
+    border-radius: 4px;
+}
+
+.wizard-info p {
+    color: #2e7d32;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+}
+
+.wizard-steps-info {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: #1b5e20;
+}
+
+.wizard-steps-info li {
+    padding: 0.25rem 0;
+    line-height: 1.6;
+}
+
+.wizard-steps-info li strong {
+    color: #2e7d32;
+    font-weight: 600;
 }
 
 .modal-close {

@@ -10,11 +10,13 @@ type CreateSportComplexDTO struct {
 }
 
 type CreateFacilityInComplexDTO struct {
-	Name          string   `json:"name"`
-	CategoryID    int64    `json:"category_id"`
-	SurfaceID     int64    `json:"surface_id"`
-	EnvironmentID int64    `json:"environment_id"`
-	Description   string   `json:"description"`
-	Capacity      int      `json:"capacity"`
-	ImageURLs     []string `json:"image_urls,omitempty"`
+	Name          string            `json:"name"`
+	CategoryID    int64             `json:"category_id"`
+	SurfaceID     int64             `json:"surface_id"`
+	EnvironmentID int64             `json:"environment_id"`
+	Description   string            `json:"description"`
+	Capacity      int               `json:"capacity"`
+	ImageURLs     []string          `json:"image_urls,omitempty"`
+	WorkingHours  []WorkingHoursDTO `json:"working_hours,omitempty"`
+	Pricing       []PricingSlotDTO  `json:"pricing,omitempty"`
 }

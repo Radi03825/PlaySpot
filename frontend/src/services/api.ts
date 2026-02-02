@@ -355,6 +355,18 @@ export async function createSportComplex(complexData: {
         environment_id: number;
         description: string;
         capacity: number;
+        image_urls?: string[];
+        working_hours?: Array<{
+            day_type: "weekday" | "weekend";
+            open_time: string;
+            close_time: string;
+        }>;
+        pricing?: Array<{
+            day_type: "weekday" | "weekend";
+            start_hour: string;
+            end_hour: string;
+            price_per_hour: number;
+        }>;
     }>;
 }) {
     return authenticatedFetch("/sport-complexes", {
@@ -399,6 +411,17 @@ export async function createFacility(facilityData: {
     city?: string;
     address?: string;
     image_urls?: string[];
+    working_hours?: Array<{
+        day_type: "weekday" | "weekend";
+        open_time: string;
+        close_time: string;
+    }>;
+    pricing?: Array<{
+        day_type: "weekday" | "weekend";
+        start_hour: string;
+        end_hour: string;
+        price_per_hour: number;
+    }>;
 }) {
     return authenticatedFetch("/facilities", {
         method: "POST",

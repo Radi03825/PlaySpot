@@ -114,11 +114,24 @@ export default function BecomeManager() {
                         <p>Monitor your bookings and customer engagement</p>
                     </div>
                 </div>
-            </div>
-
-            <div className="action-section">
+            </div>            <div className="action-section">
                 <h2>Get Started</h2>
                 <p>Submit your sport complex or facility for review. Our team will verify it within 24-48 hours.</p>
+                
+                <div className="requirements-box">
+                    <h3>📋 What You'll Need:</h3>
+                    <ul className="requirements-list">
+                        <li>Basic facility information (name, location, capacity)</li>
+                        <li>Facility characteristics (sport type, surface, environment)</li>
+                        <li>Photos of your facility (at least 1 image required)</li>
+                        <li><strong>Working hours</strong> (when your facility is open)</li>
+                        <li><strong>Pricing structure</strong> (hourly rates for different time slots)</li>
+                    </ul>
+                    <p className="requirements-note">
+                        💡 <strong>Tip:</strong> You can set different working hours and pricing for weekdays and weekends!
+                    </p>
+                </div>
+
                 <button
                     className="btn-primary btn-large"
                     onClick={openCreateModal}
@@ -175,11 +188,20 @@ export default function BecomeManager() {
             )}
 
             {showCreateForm && (
-                <div className="modal-overlay" onClick={closeCreateModal}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-overlay" onClick={closeCreateModal}>                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <button className="modal-close" onClick={closeCreateModal}>×</button>
 
                         <h2>Add Your Facility</h2>
+                          <div className="wizard-info">
+                            <p>Complete the following steps to register your facility:</p>
+                            <ol className="wizard-steps-info">
+                                <li>Basic Information (name, sport, location)</li>
+                                <li>Characteristics (surface, environment, description)</li>
+                                <li><strong>Working Hours & Pricing</strong></li>
+                                <li>Photos (minimum 1 image)</li>
+                                <li>Review & Submit</li>
+                            </ol>
+                        </div>
 
                         {error && <div className="error-message">{error}</div>}
                         {success && <div className="success-message">{success}</div>}
@@ -196,22 +218,17 @@ export default function BecomeManager() {
                                 onClick={() => handleTypeChange("facility")}
                             >
                                 Standalone Facility
-                            </button>
-                        </div>
-
-                        {createType === "complex" ? (
+                            </button>                        </div>{createType === "complex" ? (
                             <CreateSportComplexForm
                                 onSuccess={handleSuccess}
                                 onError={handleError}
                                 onCancel={closeCreateModal}
-                                submitButtonText="Submit for Approval"
                             />
                         ) : (
                             <CreateFacilityForm
                                 onSuccess={handleSuccess}
                                 onError={handleError}
                                 onCancel={closeCreateModal}
-                                submitButtonText="Submit for Approval"
                             />
                         )}
                     </div>

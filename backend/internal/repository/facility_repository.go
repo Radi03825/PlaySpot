@@ -398,3 +398,77 @@ func (r *FacilityRepository) GetFacilityManagerID(id int64) (*int64, error) {
 	}
 	return managerID, nil
 }
+
+// CreateSchedule creates a new facility schedule
+func (r *FacilityRepository) CreateSchedule(schedule *model.FacilitySchedule) error {
+	query := `
+		INSERT INTO facility_schedules (facility_id, day_type, open_time, close_time)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id
+	`
+	return r.db.QueryRow(query, schedule.FacilityID, schedule.DayType, schedule.OpenTime, schedule.CloseTime).Scan(&schedule.ID)
+}
+
+// CreatePricing creates a new facility pricing entry
+func (r *FacilityRepository) CreatePricing(pricing *model.FacilityPricing) error {
+	query := `
+		INSERT INTO facility_pricings (facility_id, day_type, start_hour, end_hour, price_per_hour)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
+	`
+	return r.db.QueryRow(query, pricing.FacilityID, pricing.DayType, pricing.StartHour, pricing.EndHour, pricing.PricePerHour).Scan(&pricing.ID)
+}
+
+// GetSchedulesByFacilityID retrieves all schedules for a facility
+func (r *FacilityRepository) GetSchedulesByFacilityID(facilityID int64) ([]*model.FacilitySchedule, error) {
+	query := `
+		SELECT id, facility_id, day_type, open_time, close_time
+		FROM facility_schedules
+		WHERE facility_id = $1
+		ORDER BY day_type
+	`
+	rows, err := r.db.Query(query, facilityID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var schedules []*model.FacilitySchedule
+	for rows.Next() {
+		var schedule model.FacilitySchedule
+		err := rows.Scan(&schedule.ID, &schedule.FacilityID, &schedule.DayType, &schedule.OpenTime, &schedule.CloseTime)
+		if err != nil {
+			return nil, err
+		}
+		schedules = append(schedules, &schedule)
+	}
+
+	return schedules, nil
+}
+
+// GetPricingByFacilityID retrieves all pricing entries for a facility
+func (r *FacilityRepository) GetPricingByFacilityID(facilityID int64) ([]*model.FacilityPricing, error) {
+	query := `
+		SELECT id, facility_id, day_type, start_hour, end_hour, price_per_hour
+		FROM facility_pricings
+		WHERE facility_id = $1
+		ORDER BY day_type, start_hour
+	`
+	rows, err := r.db.Query(query, facilityID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var pricings []*model.FacilityPricing
+	for rows.Next() {
+		var pricing model.FacilityPricing
+		err := rows.Scan(&pricing.ID, &pricing.FacilityID, &pricing.DayType, &pricing.StartHour, &pricing.EndHour, &pricing.PricePerHour)
+		if err != nil {
+			return nil, err
+		}
+		pricings = append(pricings, &pricing)
+	}
+
+	return pricings, nil
+}

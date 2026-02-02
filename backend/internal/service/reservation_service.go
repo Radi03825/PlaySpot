@@ -73,10 +73,10 @@ func (s *ReservationService) GetFacilityAvailability(facilityID int64, startDate
 
 // buildDayAvailability builds availability for a single day
 func (s *ReservationService) buildDayAvailability(date time.Time, schedules []model.FacilitySchedule, pricings []model.FacilityPricing, reservations []model.FacilityReservation) model.DayAvailability {
-	dayType := "weekday"
+	dayType := model.DayTypeWeekday
 	weekday := date.Weekday()
 	if weekday == time.Saturday || weekday == time.Sunday {
-		dayType = "weekend"
+		dayType = model.DayTypeWeekend
 	}
 
 	// Find schedule for this day type
@@ -99,15 +99,8 @@ func (s *ReservationService) buildDayAvailability(date time.Time, schedules []mo
 	}
 
 	// Parse open and close times
-	openTime, err := time.Parse("15:04:05", schedule.OpenTime)
-	if err != nil {
-		return dayAvailability
-	}
-
-	closeTime, err := time.Parse("15:04:05", schedule.CloseTime)
-	if err != nil {
-		return dayAvailability
-	}
+	openTime := schedule.OpenTime
+	closeTime := schedule.CloseTime
 
 	// Create time slots (hourly)
 	currentSlot := time.Date(date.Year(), date.Month(), date.Day(), openTime.Hour(), openTime.Minute(), 0, 0, date.Location())
@@ -137,7 +130,7 @@ func (s *ReservationService) buildDayAvailability(date time.Time, schedules []mo
 }
 
 // findPricing finds the price for a given time slot
-func (s *ReservationService) findPricing(slotTime time.Time, dayType string, pricings []model.FacilityPricing) float64 {
+func (s *ReservationService) findPricing(slotTime time.Time, dayType model.DayType, pricings []model.FacilityPricing) float64 {
 	slotHour := slotTime.Format("15:04:05")
 
 	for _, p := range pricings {
@@ -282,10 +275,10 @@ func (s *ReservationService) calculatePrice(facilityID int64, startTime, endTime
 	duration := endTime.Sub(startTime)
 	hours := duration.Hours()
 
-	dayType := "weekday"
+	dayType := model.DayTypeWeekday
 	weekday := startTime.Weekday()
 	if weekday == time.Saturday || weekday == time.Sunday {
-		dayType = "weekend"
+		dayType = model.DayTypeWeekend
 	}
 
 	// Find the pricing for the start time

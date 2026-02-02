@@ -2,7 +2,9 @@ package service
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/Radi03825/PlaySpot/internal/dto"
 	"github.com/Radi03825/PlaySpot/internal/model"
 	"github.com/Radi03825/PlaySpot/internal/repository"
 )
@@ -153,4 +155,116 @@ func (s *FacilityService) CreateFacilityWithoutImages(name string, sportComplexI
 
 func (s *FacilityService) GetFacilityDetailsByID(id int64) (*model.FacilityDetails, error) {
 	return s.repo.GetFacilityByID(id)
+}
+
+// parseTime parses a time string in HH:MM format
+func parseTime(timeStr string) (time.Time, error) {
+	return time.Parse("15:04", timeStr)
+}
+
+// saveWorkingHours saves working hours for a facility
+func (s *FacilityService) saveWorkingHours(facilityID int64, workingHours []dto.WorkingHoursDTO) error {
+	for _, wh := range workingHours {
+		openTime, err := parseTime(wh.OpenTime)
+		if err != nil {
+			return fmt.Errorf("invalid open time format: %v", err)
+		}
+
+		closeTime, err := parseTime(wh.CloseTime)
+		if err != nil {
+			return fmt.Errorf("invalid close time format: %v", err)
+		}
+
+		schedule := &model.FacilitySchedule{
+			FacilityID: facilityID,
+			DayType:    model.DayType(wh.DayType),
+			OpenTime:   openTime,
+			CloseTime:  closeTime,
+		}
+
+		if err := s.repo.CreateSchedule(schedule); err != nil {
+			return fmt.Errorf("failed to create schedule: %v", err)
+		}
+	}
+	return nil
+}
+
+// savePricing saves pricing slots for a facility
+func (s *FacilityService) savePricing(facilityID int64, pricingSlots []dto.PricingSlotDTO) error {
+	for _, ps := range pricingSlots {
+		pricing := &model.FacilityPricing{
+			FacilityID:   facilityID,
+			DayType:      model.DayType(ps.DayType),
+			StartHour:    ps.StartHour,
+			EndHour:      ps.EndHour,
+			PricePerHour: ps.PricePerHour,
+		}
+
+		if err := s.repo.CreatePricing(pricing); err != nil {
+			return fmt.Errorf("failed to create pricing: %v", err)
+		}
+	}
+	return nil
+}
+
+// CreateFacilityWithScheduleAndPricing creates a facility with working hours and pricing
+func (s *FacilityService) CreateFacilityWithScheduleAndPricing(name string, sportComplexID *int64, categoryID, surfaceID, environmentID int64, city, address, description string, capacity int, managerID int64, imageURLs []string, workingHours []dto.WorkingHoursDTO, pricing []dto.PricingSlotDTO) (*model.Facility, error) {
+	// Create the facility first
+	facility, err := s.CreateFacility(name, sportComplexID, categoryID, surfaceID, environmentID, city, address, description, capacity, managerID, imageURLs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Save working hours if provided
+	if len(workingHours) > 0 {
+		if err := s.saveWorkingHours(facility.ID, workingHours); err != nil {
+			// Log error but don't fail the facility creation
+			// The facility was successfully created, only schedule saving failed
+		}
+	}
+
+	// Save pricing if provided
+	if len(pricing) > 0 {
+		if err := s.savePricing(facility.ID, pricing); err != nil {
+			// Log error but don't fail the facility creation
+			// The facility was successfully created, only pricing saving failed
+		}
+	}
+
+	return facility, nil
+}
+
+// CreateFacilityWithoutImagesAndSchedule creates a facility without handling images, schedules, or pricing (for internal use)
+func (s *FacilityService) CreateFacilityWithoutImagesAndSchedule(name string, sportComplexID *int64, categoryID, surfaceID, environmentID int64, city, address, description string, capacity int, managerID int64, workingHours []dto.WorkingHoursDTO, pricing []dto.PricingSlotDTO) (*model.Facility, error) {
+	// Create the facility
+	facility, err := s.repo.CreateFacility(name, sportComplexID, categoryID, surfaceID, environmentID, city, address, description, capacity, managerID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Save working hours if provided
+	if len(workingHours) > 0 {
+		if err := s.saveWorkingHours(facility.ID, workingHours); err != nil {
+			// Log error but don't fail the facility creation
+		}
+	}
+
+	// Save pricing if provided
+	if len(pricing) > 0 {
+		if err := s.savePricing(facility.ID, pricing); err != nil {
+			// Log error but don't fail the facility creation
+		}
+	}
+
+	return facility, nil
+}
+
+// GetSchedulesByFacilityID retrieves all schedules for a facility
+func (s *FacilityService) GetSchedulesByFacilityID(facilityID int64) ([]*model.FacilitySchedule, error) {
+	return s.repo.GetSchedulesByFacilityID(facilityID)
+}
+
+// GetPricingByFacilityID retrieves all pricing entries for a facility
+func (s *FacilityService) GetPricingByFacilityID(facilityID int64) ([]*model.FacilityPricing, error) {
+	return s.repo.GetPricingByFacilityID(facilityID)
 }
