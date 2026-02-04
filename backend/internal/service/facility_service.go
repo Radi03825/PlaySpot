@@ -165,12 +165,13 @@ func parseTime(timeStr string) (time.Time, error) {
 // saveWorkingHours saves working hours for a facility
 func (s *FacilityService) saveWorkingHours(facilityID int64, workingHours []dto.WorkingHoursDTO) error {
 	for _, wh := range workingHours {
-		openTime, err := parseTime(wh.OpenTime)
+		// Validate time format
+		_, err := parseTime(wh.OpenTime)
 		if err != nil {
 			return fmt.Errorf("invalid open time format: %v", err)
 		}
 
-		closeTime, err := parseTime(wh.CloseTime)
+		_, err = parseTime(wh.CloseTime)
 		if err != nil {
 			return fmt.Errorf("invalid close time format: %v", err)
 		}
@@ -178,8 +179,8 @@ func (s *FacilityService) saveWorkingHours(facilityID int64, workingHours []dto.
 		schedule := &model.FacilitySchedule{
 			FacilityID: facilityID,
 			DayType:    model.DayType(wh.DayType),
-			OpenTime:   openTime,
-			CloseTime:  closeTime,
+			OpenTime:   wh.OpenTime + ":00",  // Convert HH:MM to HH:MM:SS
+			CloseTime:  wh.CloseTime + ":00", // Convert HH:MM to HH:MM:SS
 		}
 
 		if err := s.repo.CreateSchedule(schedule); err != nil {

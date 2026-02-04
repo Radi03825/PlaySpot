@@ -1,7 +1,5 @@
 package model
 
-import "time"
-
 // DayType represents the type of day for scheduling
 type DayType string
 
@@ -12,11 +10,11 @@ const (
 
 // FacilitySchedule represents the working hours for a facility
 type FacilitySchedule struct {
-	ID         int64     `json:"id"`
-	FacilityID int64     `json:"facility_id"`
-	OpenTime   time.Time `json:"open_time"`
-	CloseTime  time.Time `json:"close_time"`
-	DayType    DayType   `json:"day_type"`
+	ID         int64   `json:"id"`
+	FacilityID int64   `json:"facility_id"`
+	OpenTime   string  `json:"open_time"`  // HH:MM:SS format
+	CloseTime  string  `json:"close_time"` // HH:MM:SS format
+	DayType    DayType `json:"day_type"`
 }
 
 // FacilityPricing represents pricing intervals for a facility

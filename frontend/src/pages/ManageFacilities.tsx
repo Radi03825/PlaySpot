@@ -15,23 +15,30 @@ export default function ManageFacilities() {
     const [success, setSuccess] = useState("");
     const [mySportComplexes, setMySportComplexes] = useState<SportComplex[]>([]);
     const [myFacilities, setMyFacilities] = useState<FacilityDetails[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchData();
-    }, []);
-
-    const fetchData = async () => {
+    }, []);    const fetchData = async () => {
         try {
+            setLoading(true);
+            console.log("Fetching sport complexes and facilities...");
             const [complexes, facilities] = await Promise.all([
                 getMySportComplexes(),
                 getMyFacilities()
             ]);
 
+            console.log("Sport complexes received:", complexes);
+            console.log("Facilities received:", facilities);
+
             setMySportComplexes(complexes || []);
             setMyFacilities(facilities || []);
         } catch (err) {
             console.error("Failed to fetch data:", err);
-            setError("Failed to load your facilities");
+            const errorMessage = err instanceof Error ? err.message : "Failed to load your facilities";
+            setError(`Failed to load your facilities: ${errorMessage}`);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -85,48 +92,83 @@ export default function ManageFacilities() {
                 >
                     + Create New
                 </button>
-            </div>
-
-            {error && <div className="error-message">{error}</div>}
-            {success && <div className="success-message">{success}</div>}
-
-            {/* List of my facilities */}
-            <div className="facilities-list">
-                <h2>My Sport Complexes</h2>
-                {!mySportComplexes || mySportComplexes.length === 0 ? (
-                    <p className="empty-message">No sport complexes yet. Create one to get started!</p>
-                ) : (
-                    <div className="complexes-grid">
-                        {mySportComplexes.map(complex => (
-                            <div key={complex.id} className="complex-card">
-                                <h3>{complex.name}</h3>
-                                <p>{complex.city}, {complex.address}</p>
-                                <p>{complex.description}</p>
-                                {getStatusBadge(complex.is_verified, complex.is_active)}
+            </div>            {error && <div className="error-message">{error}</div>}
+            {success && <div className="success-message">{success}</div>}            {loading ? (
+                <div className="loading-container">
+                    <p>Loading your facilities...</p>
+                </div>
+            ) : (
+                <>
+                    {/* List of my facilities */}
+                    <div className="facilities-list">
+                        <h2>My Sport Complexes</h2>
+                        {!mySportComplexes || mySportComplexes.length === 0 ? (
+                            <p className="empty-message">No sport complexes yet. Create one to get started!</p>
+                        ) : (
+                            <div className="complexes-grid">
+                                {mySportComplexes.map(complex => (
+                                    <div key={complex.id} className="complex-card">
+                                        <h3>{complex.name}</h3>
+                                        <p>{complex.city}, {complex.address}</p>
+                                        <p>{complex.description}</p>
+                                        {getStatusBadge(complex.is_verified, complex.is_active)}
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                )}
-
-                <h2>My Standalone Facilities</h2>
-                {!myFacilities || myFacilities.filter(f => !f.sport_complex_id).length === 0 ? (
-                    <p className="empty-message">No standalone facilities yet.</p>
-                ) : (
-                    <div className="facilities-grid">
-                        {myFacilities.filter(f => !f.sport_complex_id).map(facility => (
-                            <div key={facility.id} className="facility-card">
-                                <h3>{facility.name}</h3>
-                                <p className="facility-category">{facility.category_name}</p>
-                                <p>{facility.description}</p>
-                                <p className="facility-details">
-                                    Capacity: {facility.capacity} | {facility.surface_name} | {facility.environment_name}
-                                </p>
-                                {getStatusBadge(facility.is_verified, facility.is_active)}
+                        )}                        <h2>My Facilities</h2>
+                        {!myFacilities || myFacilities.length === 0 ? (
+                            <p className="empty-message">No facilities yet. Create one to get started!</p>
+                        ) : (
+                            <div className="facilities-grid">
+                                {myFacilities.map(facility => (
+                                    <div key={facility.id} className="facility-card">
+                                        <div className="facility-header">
+                                            <h3>{facility.name}</h3>
+                                            {getStatusBadge(facility.is_verified, facility.is_active)}
+                                        </div>
+                                        <p className="facility-category">{facility.category_name}</p>
+                                        {facility.sport_complex_id && facility.sport_complex_name && (
+                                            <p className="facility-complex">
+                                                📍 Part of: <a 
+                                                    href={`/sport-complexes/${facility.sport_complex_id}`}
+                                                    className="complex-link"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        window.location.href = `/sport-complexes/${facility.sport_complex_id}`;
+                                                    }}
+                                                >
+                                                    {facility.sport_complex_name}
+                                                </a>
+                                            </p>
+                                        )}
+                                        <p className="facility-description">{facility.description}</p>
+                                        <p className="facility-details">
+                                            Capacity: {facility.capacity} | {facility.surface_name} | {facility.environment_name}
+                                        </p>
+                                        <div className="facility-actions">
+                                            <button 
+                                                className="btn-secondary"
+                                                onClick={() => window.location.href = `/facilities/${facility.id}`}
+                                            >
+                                                View Details
+                                            </button>
+                                            {/* Statistics button - hidden for now, will be implemented in the future */}
+                                            {false && (
+                                                <button 
+                                                    className="btn-secondary"
+                                                    onClick={() => window.location.href = `/facilities/${facility.id}/statistics`}
+                                                >
+                                                    Statistics
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        )}
                     </div>
-                )}
-            </div>
+                </>
+            )}
 
             {/* Create Form Modal */}
             {showCreateForm && (

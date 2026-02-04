@@ -17,13 +17,13 @@ type Event struct {
 	RelatedBookingID *int64    `json:"related_booking_id"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
-	
+
 	// Joined data
-	Organizer        *User     `json:"organizer,omitempty"`
-	Sport            *Sport    `json:"sport,omitempty"`
-	Facility         *Facility `json:"facility,omitempty"`
-	CurrentParticipants int    `json:"current_participants"`
-	IsUserJoined     bool      `json:"is_user_joined,omitempty"`
+	Organizer           *User     `json:"organizer,omitempty"`
+	Sport               *Sport    `json:"sport,omitempty"`
+	Facility            *Facility `json:"facility,omitempty"`
+	CurrentParticipants int       `json:"current_participants"`
+	IsUserJoined        bool      `json:"is_user_joined,omitempty"`
 }
 
 type EventParticipant struct {
@@ -32,7 +32,7 @@ type EventParticipant struct {
 	UserID   int64     `json:"user_id"`
 	JoinedAt time.Time `json:"joined_at"`
 	Status   string    `json:"status"` // JOINED, LEFT, REMOVED
-	
+
 	// Joined data
-	User     *User     `json:"user,omitempty"`
+	User *User `json:"user,omitempty"`
 }

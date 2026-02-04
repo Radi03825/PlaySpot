@@ -37,6 +37,27 @@
     margin: 1rem 0;
 }
 
+.loading-container {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.loading-container p {
+    margin: 0;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
 .complexes-grid,
 .facilities-grid {
     display: grid;
@@ -74,10 +95,79 @@
     margin: 0.5rem 0;
 }
 
+.facility-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.facility-header h3 {
+    margin: 0;
+    flex: 1;
+}
+
+.facility-complex {
+    color: #666;
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+}
+
+.complex-link {
+    color: #0066cc;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.complex-link:hover {
+    color: #0052a3;
+    text-decoration: underline;
+}
+
+.facility-description {
+    color: #666;
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
 .facility-details {
     font-size: 0.9rem;
     color: #666;
     margin-top: 0.5rem;
+}
+
+.facility-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.facility-actions .btn-secondary {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.facility-actions .btn-secondary:hover {
+    background: #e0e0e0;
+    border-color: #ccc;
+    transform: translateY(-1px);
+}
+
+.facility-actions .btn-secondary:active {
+    transform: translateY(0);
 }
 
 .status-badge {

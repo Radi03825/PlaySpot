@@ -98,9 +98,15 @@ func (s *ReservationService) buildDayAvailability(date time.Time, schedules []mo
 		return dayAvailability
 	}
 
-	// Parse open and close times
-	openTime := schedule.OpenTime
-	closeTime := schedule.CloseTime
+	// Parse open and close times from "HH:MM:SS" format
+	openTime, err := parseTimeOfDay(schedule.OpenTime)
+	if err != nil {
+		return dayAvailability
+	}
+	closeTime, err := parseTimeOfDay(schedule.CloseTime)
+	if err != nil {
+		return dayAvailability
+	}
 
 	// Create time slots (hourly)
 	currentSlot := time.Date(date.Year(), date.Month(), date.Day(), openTime.Hour(), openTime.Minute(), 0, 0, date.Location())
@@ -292,6 +298,16 @@ func (s *ReservationService) GetUserReservations(userID int64) ([]model.Facility
 	return s.repo.GetUserReservations(userID)
 }
 
+// GetUpcomingConfirmedReservations retrieves upcoming confirmed reservations for a user
+func (s *ReservationService) GetUpcomingConfirmedReservations(userID int64) ([]dto.ReservationWithFacilityDTO, error) {
+	return s.repo.GetUpcomingConfirmedReservationsWithDetails(userID)
+}
+
+// GetPendingReservationsCount retrieves the count of pending reservations for a user
+func (s *ReservationService) GetPendingReservationsCount(userID int64) (int, error) {
+	return s.repo.GetPendingReservationsCount(userID)
+}
+
 // CancelReservation cancels a reservation
 func (s *ReservationService) CancelReservation(reservationID, userID int64) error {
 	// Cancel reservation and get details
@@ -329,4 +345,18 @@ func (s *ReservationService) deleteCalendarEventForReservation(reservation *mode
 		tokenExpiry,
 		*reservation.GoogleCalendarEventID,
 	)
+}
+
+// parseTimeOfDay parses a time string in "HH:MM:SS" or "HH:MM" format to time.Time
+func parseTimeOfDay(timeStr string) (time.Time, error) {
+	// Try parsing as "HH:MM:SS"
+	t, err := time.Parse("15:04:05", timeStr)
+	if err != nil {
+		// Try parsing as "HH:MM"
+		t, err = time.Parse("15:04", timeStr)
+		if err != nil {
+			return time.Time{}, fmt.Errorf("invalid time format: %s", timeStr)
+		}
+	}
+	return t, nil
 }

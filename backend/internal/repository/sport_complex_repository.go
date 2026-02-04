@@ -91,7 +91,8 @@ func (r *SportComplexRepository) GetComplexesByManagerID(managerID int64) ([]mod
 	}
 	defer rows.Close()
 
-	var complexes []model.SportComplex
+	// Initialize with empty slice instead of nil to ensure JSON returns [] not null
+	complexes := []model.SportComplex{}
 	for rows.Next() {
 		var complex model.SportComplex
 		err := rows.Scan(&complex.ID, &complex.Name, &complex.Address, &complex.City, &complex.Description, &complex.ManagerID, &complex.IsVerified, &complex.IsActive)

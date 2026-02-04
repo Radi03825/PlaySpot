@@ -687,6 +687,18 @@ export async function getMyReservations() {
     });
 }
 
+export async function getUpcomingConfirmedReservations() {
+    return authenticatedFetch("/reservations/upcoming", {
+        method: "GET",
+    }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Failed to fetch upcoming reservations");
+        }
+        return data;
+    });
+}
+
 export async function cancelReservation(reservationId: number) {
     return authenticatedFetch(`/reservations/${reservationId}/cancel`, {
         method: "POST",

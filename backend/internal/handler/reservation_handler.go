@@ -125,6 +125,35 @@ func (h *ReservationHandler) GetUserReservations(w http.ResponseWriter, r *http.
 	json.NewEncoder(w).Encode(reservations)
 }
 
+func (h *ReservationHandler) GetUpcomingConfirmedReservations(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
+	reservations, err := h.service.GetUpcomingConfirmedReservations(claims.UserID)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	// Also get pending count
+	pendingCount, _ := h.service.GetPendingReservationsCount(claims.UserID)
+
+	response := map[string]interface{}{
+		"reservations":  reservations,
+		"pending_count": pendingCount,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 func (h *ReservationHandler) CancelReservation(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {

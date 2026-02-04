@@ -25,48 +25,75 @@ func (s *EventService) CreateEvent(createDTO *dto.CreateEventDTO, organizerID in
 	if createDTO.Title == "" {
 		return nil, errors.New("title is required")
 	}
-	
+
 	if createDTO.SportID == 0 {
 		return nil, errors.New("sport_id is required")
 	}
-	
+
 	if createDTO.MaxParticipants < 2 {
 		return nil, errors.New("max_participants must be at least 2")
 	}
-	
+
+	// Validate location type
+	if createDTO.LocationType != "booking" && createDTO.LocationType != "external" {
+		return nil, errors.New("location_type must be either 'booking' or 'external'")
+	}
+
+	var startTime, endTime time.Time
+	var facilityID *int64
+	var address *string
+
+	if createDTO.LocationType == "booking" {
+		// For booking-based events
+		if createDTO.RelatedBookingID == nil {
+			return nil, errors.New("related_booking_id is required when location_type is 'booking'")
+		}
+		if createDTO.StartTime == nil || createDTO.EndTime == nil {
+			return nil, errors.New("start_time and end_time are required")
+		}
+		startTime = *createDTO.StartTime
+		endTime = *createDTO.EndTime
+	} else {
+		// For external location events
+		if createDTO.Address == nil || *createDTO.Address == "" {
+			return nil, errors.New("address is required when location_type is 'external'")
+		}
+		if createDTO.StartTime == nil || createDTO.EndTime == nil {
+			return nil, errors.New("start_time and end_time are required when location_type is 'external'")
+		}
+		startTime = *createDTO.StartTime
+		endTime = *createDTO.EndTime
+		address = createDTO.Address
+	}
+
 	// Validate times
-	if createDTO.EndTime.Before(createDTO.StartTime) {
+	if endTime.Before(startTime) {
 		return nil, errors.New("end time must be after start time")
 	}
-	
-	if createDTO.StartTime.Before(time.Now()) {
+
+	if startTime.Before(time.Now()) {
 		return nil, errors.New("cannot create event in the past")
 	}
-	
-	// Validate location
-	if createDTO.FacilityID == nil && createDTO.Address == nil {
-		return nil, errors.New("either facility_id or address must be provided")
-	}
-	
+
 	event := &model.Event{
 		Title:            createDTO.Title,
 		Description:      createDTO.Description,
 		SportID:          createDTO.SportID,
-		StartTime:        createDTO.StartTime,
-		EndTime:          createDTO.EndTime,
+		StartTime:        startTime,
+		EndTime:          endTime,
 		MaxParticipants:  createDTO.MaxParticipants,
 		Status:           "UPCOMING",
 		OrganizerID:      organizerID,
-		FacilityID:       createDTO.FacilityID,
-		Address:          createDTO.Address,
+		FacilityID:       facilityID,
+		Address:          address,
 		RelatedBookingID: createDTO.RelatedBookingID,
 	}
-	
+
 	err := s.eventRepo.CreateEvent(event)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return event, nil
 }
 
@@ -76,7 +103,7 @@ func (s *EventService) GetEventByID(eventID int64, userID *int64) (*model.Event,
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return event, nil
 }
 
@@ -92,13 +119,13 @@ func (s *EventService) UpdateEvent(eventID int64, updateDTO *dto.UpdateEventDTO,
 	if err != nil {
 		return err
 	}
-	
+
 	if event.OrganizerID != userID {
 		return errors.New("only the organizer can update the event")
 	}
-	
+
 	updates := make(map[string]interface{})
-	
+
 	if updateDTO.Title != nil {
 		if *updateDTO.Title == "" {
 			return errors.New("title cannot be empty")
@@ -151,11 +178,11 @@ func (s *EventService) UpdateEvent(eventID int64, updateDTO *dto.UpdateEventDTO,
 	if updateDTO.Address != nil {
 		updates["address"] = *updateDTO.Address
 	}
-	
+
 	if len(updates) == 0 {
 		return errors.New("no fields to update")
 	}
-	
+
 	return s.eventRepo.UpdateEvent(eventID, updates)
 }
 
@@ -166,11 +193,11 @@ func (s *EventService) DeleteEvent(eventID int64, userID int64) error {
 	if err != nil {
 		return err
 	}
-	
+
 	if event.OrganizerID != userID {
 		return errors.New("only the organizer can delete the event")
 	}
-	
+
 	return s.eventRepo.DeleteEvent(eventID)
 }
 
@@ -180,41 +207,41 @@ func (s *EventService) JoinEvent(eventID int64, userID int64) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Check if event is full or not available
 	if event.Status != "UPCOMING" {
 		return errors.New("cannot join event with status: " + event.Status)
 	}
-	
+
 	// Check if already joined
 	if event.IsUserJoined {
 		return errors.New("already joined this event")
 	}
-	
+
 	// Check if event is full
 	count, err := s.eventRepo.GetParticipantCount(eventID)
 	if err != nil {
 		return err
 	}
-	
+
 	if count >= event.MaxParticipants {
 		// Update event status to FULL
 		s.eventRepo.UpdateEvent(eventID, map[string]interface{}{"status": "FULL"})
 		return errors.New("event is full")
 	}
-	
+
 	// Join the event
 	err = s.eventRepo.JoinEvent(eventID, userID)
 	if err != nil {
 		return err
 	}
-	
+
 	// Check if event is now full and update status
 	newCount := count + 1
 	if newCount >= event.MaxParticipants {
 		s.eventRepo.UpdateEvent(eventID, map[string]interface{}{"status": "FULL"})
 	}
-	
+
 	return nil
 }
 
@@ -224,23 +251,23 @@ func (s *EventService) LeaveEvent(eventID int64, userID int64) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Check if user has joined
 	if !event.IsUserJoined {
 		return errors.New("you have not joined this event")
 	}
-	
+
 	// Leave the event
 	err = s.eventRepo.LeaveEvent(eventID, userID)
 	if err != nil {
 		return err
 	}
-	
+
 	// If event was FULL, update status back to UPCOMING
 	if event.Status == "FULL" {
 		s.eventRepo.UpdateEvent(eventID, map[string]interface{}{"status": "UPCOMING"})
 	}
-	
+
 	return nil
 }
 

@@ -69,6 +69,7 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	// Reservation routes (authenticated users)
 	protected.HandleFunc("/reservations", reservationHandler.CreateReservation).Methods("POST")
 	protected.HandleFunc("/reservations/user", reservationHandler.GetUserReservations).Methods("GET")
+	protected.HandleFunc("/reservations/upcoming", reservationHandler.GetUpcomingConfirmedReservations).Methods("GET")
 	protected.HandleFunc("/reservations/{id:[0-9]+}/cancel", reservationHandler.CancelReservation).Methods("PUT", "POST")
 
 	// Payment routes (authenticated users)

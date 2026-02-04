@@ -292,7 +292,8 @@ func (r *FacilityRepository) GetFacilitiesByManagerID(managerID int64) ([]model.
 	}
 	defer rows.Close()
 
-	var facilities []model.FacilityDetails
+	// Initialize with empty slice instead of nil to ensure JSON returns [] not null
+	facilities := []model.FacilityDetails{}
 	for rows.Next() {
 		var facility model.FacilityDetails
 		err := rows.Scan(
