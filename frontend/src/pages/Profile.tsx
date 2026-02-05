@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import PasswordInput from "../components/PasswordInput";
-import { changePassword, connectGoogleCalendar } from "../services/api";
+import { authService } from "../api";
 import { useGoogleLogin } from '@react-oauth/google';
 import "../styles/Profile.css";
 
@@ -64,10 +64,13 @@ export default function Profile() {
             return;
         }
 
-        setLoading(true);
+                setLoading(true);
 
         try {
-            await changePassword(oldPassword, newPassword);
+            await authService.changePassword({ 
+                old_password: oldPassword, 
+                new_password: newPassword 
+            });
             setSuccess("Password changed successfully!");
             setOldPassword("");
             setNewPassword("");
@@ -83,14 +86,12 @@ export default function Profile() {
         if (!codeResponse.code) {
             setCalendarError("Failed to get Google authorization");
             return;
-        }
-
-        setConnectingCalendar(true);
+        }        setConnectingCalendar(true);
         setCalendarError("");
         setCalendarSuccess("");
 
         try {
-            await connectGoogleCalendar(codeResponse.code);
+            await authService.connectGoogleCalendar(codeResponse.code);
             setCalendarConnected(true);
             localStorage.setItem('has_calendar_access', 'true');
             setCalendarSuccess("✅ Google Calendar connected! Your future bookings will sync to your calendar.");

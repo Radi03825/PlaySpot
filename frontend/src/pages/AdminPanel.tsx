@@ -1,12 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-    getPendingFacilities,
-    getPendingSportComplexes,
-    verifyFacility,
-    verifySportComplex,
-    toggleFacilityStatus,
-    toggleComplexStatus
-} from "../services/api";
+import { facilityService, sportComplexService } from "../api";
 import type { FacilityDetails, SportComplex } from "../types";
 import AdminDetailModal from "../components/AdminDetailModal";
 import ImageViewerModal from "../components/ImageViewerModal";
@@ -22,18 +15,16 @@ export default function AdminPanel() {
     const [modalType, setModalType] = useState<"facility" | "complex" | null>(null);
     const [viewerImages, setViewerImages] = useState<{ url: string; is_primary: boolean }[]>([]);
     const [viewerInitialIndex, setViewerInitialIndex] = useState(0);
-    const [showImageViewer, setShowImageViewer] = useState(false);
-
-    const fetchPendingItems = async () => {
+    const [showImageViewer, setShowImageViewer] = useState(false);    const fetchPendingItems = async () => {
         setLoading(true);
         setError("");
 
         try {
             if (activeTab === "facilities") {
-                const data = await getPendingFacilities();
+                const data = await facilityService.getPending();
                 setPendingFacilities(data || []);
             } else {
-                const data = await getPendingSportComplexes();
+                const data = await sportComplexService.getPending();
                 setPendingComplexes(data || []);
             }
         } catch (err) {
@@ -48,7 +39,7 @@ export default function AdminPanel() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab]);    const handleVerifyFacility = async (facilityId: number) => {
         try {
-            await verifyFacility(facilityId);
+            await facilityService.verify(facilityId);
             setSuccess("Facility verified and activated successfully!");
             setSelectedItem(null);
             setModalType(null);
@@ -61,7 +52,7 @@ export default function AdminPanel() {
 
     const handleVerifyComplex = async (complexId: number) => {
         try {
-            await verifySportComplex(complexId);
+            await sportComplexService.verify(complexId);
             setSuccess("Sport complex verified and activated successfully!");
             setSelectedItem(null);
             setModalType(null);
@@ -74,7 +65,7 @@ export default function AdminPanel() {
 
     const handleToggleFacilityStatus = async (facilityId: number, currentStatus: boolean) => {
         try {
-            await toggleFacilityStatus(facilityId, !currentStatus);
+            await facilityService.toggleStatus(facilityId, !currentStatus);
             setSuccess(`Facility ${!currentStatus ? "activated" : "deactivated"} successfully!`);
             setSelectedItem(null);
             setModalType(null);
@@ -87,7 +78,7 @@ export default function AdminPanel() {
 
     const handleToggleComplexStatus = async (complexId: number, currentStatus: boolean) => {
         try {
-            await toggleComplexStatus(complexId, !currentStatus);
+            await sportComplexService.toggleStatus(complexId, !currentStatus);
             setSuccess(`Complex ${!currentStatus ? "activated" : "deactivated"} successfully!`);
             setSelectedItem(null);
             setModalType(null);
@@ -96,7 +87,7 @@ export default function AdminPanel() {
         } catch (err) {
             setError((err as Error).message || "Failed to toggle complex status");
         }
-    };    const openDetailModal = (item: FacilityDetails | SportComplex, type: "facility" | "complex") => {
+    };const openDetailModal = (item: FacilityDetails | SportComplex, type: "facility" | "complex") => {
         setSelectedItem(item);
         setModalType(type);
     };

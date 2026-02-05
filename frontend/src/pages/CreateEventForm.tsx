@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Sport, Reservation } from '../types';
-import { createEvent, getSports, getUpcomingConfirmedReservations } from '../services/api';
+import { eventService, metadataService, reservationService } from '../api';
 import '../styles/CreateEventForm.css';
 
 export default function CreateEventForm() {
@@ -30,24 +30,18 @@ export default function CreateEventForm() {
     useEffect(() => {
         fetchSports();
         fetchUpcomingReservations();
-    }, []);
-
-    const fetchSports = async () => {
+    }, []);    const fetchSports = async () => {
         try {
-            const data = await getSports();
+            const data = await metadataService.getSports();
             setSports(data);
         } catch (err) {
             console.error('Failed to fetch sports:', err);
         }
     };    const fetchUpcomingReservations = async () => {
         try {
-            const data = await getUpcomingConfirmedReservations();
-            if (Array.isArray(data)) {
-                setUpcomingReservations(data);
-            } else {
-                setUpcomingReservations(data.reservations || []);
-                setPendingCount(data.pending_count || 0);
-            }
+            const data = await reservationService.getUpcoming();
+            setUpcomingReservations(data.reservations || []);
+            setPendingCount(data.pending_count || 0);
         } catch (err) {
             console.error('Failed to fetch reservations:', err);
         }
@@ -176,9 +170,7 @@ export default function CreateEventForm() {
                 eventData.address = formData.address;
                 eventData.start_time = new Date(formData.start_time).toISOString();
                 eventData.end_time = new Date(formData.end_time).toISOString();
-            }
-
-            const result = await createEvent(eventData);
+            }            const result = await eventService.create(eventData);
             navigate(`/events/${result.id}`);
         } catch (err: any) {
             setError(err.message || 'Failed to create event');

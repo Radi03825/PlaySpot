@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { verifyEmail, resendVerificationEmail } from "../services/api";
+import { authService } from "../api";
 import "../styles/Auth.css";
 
 export default function VerifyEmail() {
@@ -19,10 +19,8 @@ export default function VerifyEmail() {
                 setStatus("error");
                 setMessage("Invalid verification link. Please check your email for the correct link.");
                 return;
-            }
-
-            try {
-                const response = await verifyEmail(token);
+            }            try {
+                const response = await authService.verifyEmail(token);
 
                 // Check if already verified
                 if (response.already_verified) {
@@ -65,10 +63,8 @@ export default function VerifyEmail() {
         }
 
         setResendStatus("sending");
-        setResendMessage("");
-
-        try {
-            const response = await resendVerificationEmail(email);
+        setResendMessage("");        try {
+            const response = await authService.resendVerificationEmail(email);
             setResendStatus("sent");
             setResendMessage(response.message || "Verification email sent! Please check your inbox.");
         } catch (error) {

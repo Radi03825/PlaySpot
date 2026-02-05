@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { sportComplexService, metadataService } from "../api";
 import type { Category, Sport, Surface, Environment } from "../types";
 import { ImageUpload } from "./ImageUpload";
-import AddFacilitySubForm from "./AddFacilitySubForm";
+import AddFacilitySubWizard from "./AddFacilitySubWizard";
 import type { WorkingHours, PricingSlot } from "./WorkingHoursPricing";
 import "../styles/CreateWizard.css";
 
-interface CreateSportComplexFormProps {
+interface CreateSportComplexWizardProps {
     onSuccess?: (message: string) => void;
     onError?: (message: string) => void;
     onCancel?: () => void;
@@ -25,11 +25,11 @@ interface FacilityData {
     pricing?: PricingSlot[];
 }
 
-export default function CreateSportComplexForm({
+export default function CreateSportComplexWizard({
     onSuccess,
     onError,
     onCancel
-}: CreateSportComplexFormProps) {
+}: CreateSportComplexWizardProps) {
     const [currentStep, setCurrentStep] = useState(1);
     const [loading, setLoading] = useState(false);
     
@@ -52,15 +52,14 @@ export default function CreateSportComplexForm({
     // Step 3: Images
     const [imageUrls, setImageUrls] = useState<string[]>([]);
 
-    useEffect(() => {
-        const fetchData = async () => {
+    useEffect(() => {        const fetchData = async () => {
             try {
                 const [cats, spts, surfs, envs, citiesData] = await Promise.all([
-                    getCategories(),
-                    getSports(),
-                    getSurfaces(),
-                    getEnvironments(),
-                    getCities()
+                    metadataService.getCategories(),
+                    metadataService.getSports(),
+                    metadataService.getSurfaces(),
+                    metadataService.getEnvironments(),
+                    metadataService.getCities()
                 ]);
 
                 setCategories(cats || []);
@@ -174,11 +173,9 @@ export default function CreateSportComplexForm({
         setShowFacilityWizard(false);
         setEditingFacilityIndex(null);
     };    const handleSubmit = async () => {
-        if (!validateStep(4)) return;
-
-        setLoading(true);
+        if (!validateStep(4)) return;        setLoading(true);
         try {
-            await createSportComplex({
+            await sportComplexService.create({
                 name: basicInfo.name,
                 address: basicInfo.address,
                 city: basicInfo.city,
@@ -338,8 +335,10 @@ export default function CreateSportComplexForm({
                         </div>
                     ))}
                 </div>
-            )}            {showFacilityWizard && (
-                <AddFacilitySubForm
+            )}
+
+            {showFacilityWizard && (
+                <AddFacilitySubWizard
                     sports={sports}
                     categories={categories}
                     surfaces={surfaces}

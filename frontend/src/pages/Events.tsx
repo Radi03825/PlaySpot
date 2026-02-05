@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Event, Sport } from '../types';
-import { getAllEvents, getSports } from '../services/api';
+import { eventService, metadataService } from '../api';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Events.css';
 
@@ -20,11 +20,9 @@ export default function Events() {
     useEffect(() => {
         fetchSports();
         fetchEvents();
-    }, [selectedStatus, selectedSport]);
-
-    const fetchSports = async () => {
+    }, [selectedStatus, selectedSport]);    const fetchSports = async () => {
         try {
-            const data = await getSports();
+            const data = await metadataService.getSports();
             setSports(data);
         } catch (err) {
             console.error('Failed to fetch sports:', err);
@@ -34,7 +32,7 @@ export default function Events() {
     const fetchEvents = async () => {
         try {
             setLoading(true);
-            const data = await getAllEvents(selectedStatus || undefined, selectedSport);
+            const data = await eventService.getAll(selectedStatus || undefined, selectedSport);
             setEvents(data || []);
             setError(null);
         } catch (err: any) {

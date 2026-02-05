@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Sport, Event } from '../types';
-import { updateEvent, getEventById, getSports } from '../services/api';
+import { eventService, metadataService } from '../api';
 import '../styles/CreateEventForm.css';
 
 export default function EditEventForm() {
@@ -29,12 +29,10 @@ export default function EditEventForm() {
         if (id) {
             fetchEvent();
         }
-    }, [id]);
-
-    const fetchEvent = async () => {
+    }, [id]);    const fetchEvent = async () => {
         try {
             setFetchLoading(true);
-            const data = await getEventById(Number(id));
+            const data = await eventService.getById(Number(id));
             setEvent(data);
             
             // Populate form with existing data
@@ -57,7 +55,7 @@ export default function EditEventForm() {
 
     const fetchSports = async () => {
         try {
-            const data = await getSports();
+            const data = await metadataService.getSports();
             setSports(data);
         } catch (err) {
             console.error('Failed to fetch sports:', err);
@@ -109,9 +107,7 @@ export default function EditEventForm() {
             }
             if (formData.address !== (event?.address || '')) {
                 updateData.address = formData.address || undefined;
-            }
-
-            await updateEvent(Number(id), updateData);
+            }            await eventService.update(Number(id), updateData);
             navigate(`/events/${id}`);
         } catch (err: any) {
             setError(err.message || 'Failed to update event');

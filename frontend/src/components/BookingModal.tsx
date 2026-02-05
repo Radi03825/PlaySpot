@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { getFacilityAvailability, createReservation } from "../services/api";
+import { facilityService, reservationService } from "../api";
 import type { DayAvailability, AvailableSlot } from "../types";
 import "../styles/BookingModal.css";
 
@@ -45,10 +45,8 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
             const dateStr = date.toISOString().split('T')[0];
             const nextDay = new Date(date);
             nextDay.setDate(nextDay.getDate() + 1);
-            const nextDayStr = nextDay.toISOString().split('T')[0];
-
-            console.log("Fetching availability from", dateStr, "to", nextDayStr);
-            const data = await getFacilityAvailability(facilityId, dateStr, nextDayStr);
+            const nextDayStr = nextDay.toISOString().split('T')[0];            console.log("Fetching availability from", dateStr, "to", nextDayStr);
+            const data = await facilityService.getAvailability(facilityId, dateStr, nextDayStr);
             console.log("Received availability data:", data);
 
             if (data && data.length > 0) {
@@ -171,13 +169,11 @@ export default function BookingModal({ facilityId, facilityName, onClose, onSucc
                 const [startHour, startMin] = startTime.split(':').map(Number);
                 const [endHour, endMin] = endTime.split(':').map(Number);
 
-                const [year, month, day] = dateStr.split('-').map(Number);
-
-                // Create dates in LOCAL timezone (Sofia time)
+                const [year, month, day] = dateStr.split('-').map(Number);                // Create dates in LOCAL timezone (Sofia time)
                 const startDateTime = new Date(year, month - 1, day, startHour, startMin, 0);
                 const endDateTime = new Date(year, month - 1, day, endHour, endMin, 0);
 
-                await createReservation({
+                await reservationService.create({
                     facility_id: facilityId,
                     start_time: startDateTime.toISOString(),
                     end_time: endDateTime.toISOString(),

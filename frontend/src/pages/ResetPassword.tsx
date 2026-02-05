@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { resetPassword } from "../services/api";
+import { authService } from "../api";
 import PasswordInput from "../components/PasswordInput";
 import "../styles/Auth.css";
 
@@ -31,12 +31,10 @@ export default function ResetPassword() {
         if (newPassword !== confirmPassword) {
             setError("Passwords do not match");
             return;
-        }
-
-        setLoading(true);
+        }        setLoading(true);
 
         try {
-            await resetPassword(token, newPassword);
+            await authService.resetPassword({ token, new_password: newPassword });
             alert("Password reset successfully! You can now login with your new password.");
             navigate("/login");
         } catch (err) {

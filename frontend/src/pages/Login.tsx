@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { login as loginApi, googleLogin, linkGoogleAccount, resendVerificationEmail } from "../services/api";
+import { authService } from "../api";
 import { useAuth } from "../context/AuthContext";
 import PasswordInput from "../components/PasswordInput";
 import { GoogleLogin } from '@react-oauth/google';
@@ -25,10 +25,8 @@ export default function Login() {
         e.preventDefault();
         setErrors({});
         setShowResendVerification(false);
-        setResendMessage("");
-
-        try {
-            const response = await loginApi(email, password);
+        setResendMessage("");        try {
+            const response = await authService.login({ email, password });
             const accessToken = response?.access_token;
             const refreshToken = response?.refresh_token;
             const user = response?.user;
@@ -58,10 +56,8 @@ export default function Login() {
     async function handleResendVerification() {
         setIsResending(true);
         setResendMessage("");
-        setErrors({});
-
-        try {
-            await resendVerificationEmail(email);
+        setErrors({});        try {
+            await authService.resendVerificationEmail(email);
             setResendMessage("Verification email sent! Please check your inbox.");
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Failed to resend verification email";
@@ -80,10 +76,8 @@ export default function Login() {
             if (!credentialResponse.credential) {
                 setErrors({ general: "Failed to get Google credentials" });
                 return;
-            }
-
-            // Use the credential (ID token) for login
-            const response = await googleLogin(credentialResponse.credential);
+            }            // Use the credential (ID token) for login
+            const response = await authService.googleLogin({ id_token: credentialResponse.credential });
             const accessToken = response?.access_token;
             const refreshToken = response?.refresh_token;
             const user = response?.user;
@@ -116,10 +110,12 @@ export default function Login() {
         if (!linkData) return;
 
         setIsLinking(true);
-        setErrors({});
-
-        try {
-            const response = await linkGoogleAccount(linkData.email, linkPassword, linkData.googleId);
+        setErrors({});        try {
+            const response = await authService.linkGoogleAccount({
+                email: linkData.email,
+                password: linkPassword,
+                google_id: linkData.googleId
+            });
             const accessToken = response?.access_token;
             const refreshToken = response?.refresh_token;
             const user = response?.user;

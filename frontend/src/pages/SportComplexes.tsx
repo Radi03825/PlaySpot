@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAllSportComplexes, getEntityImages } from "../services/api";
+import { sportComplexService, imageService } from "../api";
 import type { SportComplex } from "../types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import "../styles/SportComplexes.css";
@@ -18,13 +18,13 @@ export default function SportComplexes() {
     }, []);    const fetchSportComplexes = async () => {
         try {
             setLoading(true);
-            const data = await getAllSportComplexes();
+            const data = await sportComplexService.getAll();
             setComplexes(data || []);
             
             // Fetch images for each complex
             const imagePromises = (data || []).map(async (complex: SportComplex) => {
                 try {
-                    const images = await getEntityImages('sport_complex', complex.id);
+                    const images = await imageService.getEntityImages('sport_complex', complex.id);
                     if (images && images.length > 0) {
                         const primary = images.find((img: any) => img.is_primary) || images[0];
                         return { id: complex.id, url: primary.url };

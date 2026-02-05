@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { register } from "../services/api";
+import { authService } from "../api";
 import PasswordInput from "../components/PasswordInput";
 import "../styles/Auth.css";
 
@@ -29,10 +29,13 @@ export default function Register() {
         if (birthDate && new Date(birthDate) > new Date()) {
             setErrors({ birthDate: "Birth date cannot be in the future" });
             return;
-        }
-
-        const res = await register(name, email, password, birthDate);
-        if (res.ok) {
+        }        try {
+            await authService.register({ 
+                name, 
+                email, 
+                password, 
+                birth_date: birthDate 
+            });
             setRegistrationSuccess(true);
             setName("");
             setEmail("");
@@ -44,18 +47,10 @@ export default function Register() {
             setTimeout(() => {
                 navigate("/login");
             }, 5000);
-        } else {
-            try {
-                const errorData = await res.json();
-                if (errorData.field) {
-                    setErrors({ [errorData.field]: errorData.error });
-                } else {
-                    setErrors({ general: errorData.error || "Registration failed" });
-                }
-            } catch {
-                // If JSON parsing fails, show generic error
-                setErrors({ general: "Registration failed. Please try again." });
-            }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Registration failed";
+            // Try to parse field-specific errors
+            setErrors({ general: errorMessage });
         }
     }
 

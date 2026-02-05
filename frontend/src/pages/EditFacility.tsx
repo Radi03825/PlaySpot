@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getFacilityById, updateFacility, getCategories, getSurfaces, getEnvironments, getCities } from "../services/api";
+import { facilityService, metadataService } from "../api";
 import { useAuth } from "../context/AuthContext";
 import type { Category, Surface, Environment } from "../types";
 import "../styles/EditFacility.css";
@@ -33,16 +33,14 @@ export default function EditFacility() {
 
     useEffect(() => {
         const fetchData = async () => {
-            if (!id || !user) return;
-
-            try {
+            if (!id || !user) return;            try {
                 setLoading(true);
                 const [facilityData, categoriesData, surfacesData, environmentsData, citiesData] = await Promise.all([
-                    getFacilityById(parseInt(id)),
-                    getCategories(),
-                    getSurfaces(),
-                    getEnvironments(),
-                    getCities()
+                    facilityService.getById(parseInt(id)),
+                    metadataService.getCategories(),
+                    metadataService.getSurfaces(),
+                    metadataService.getEnvironments(),
+                    metadataService.getCities()
                 ]);
 
                 // Check if user is the owner
@@ -114,13 +112,11 @@ export default function EditFacility() {
         if (formData.capacity <= 0) {
             setError("Capacity must be greater than 0");
             return;
-        }
-
-        try {
+        }        try {
             setSubmitting(true);
             setError("");
             
-            await updateFacility(parseInt(id), formData);
+            await facilityService.update(parseInt(id), formData);
             
             // Redirect to facility details page
             navigate(`/facilities/${id}`);

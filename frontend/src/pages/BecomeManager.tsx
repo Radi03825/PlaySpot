@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-    getMySportComplexes,
-    getMyFacilities
-} from "../services/api";
+import { sportComplexService, facilityService } from "../api";
 import type { SportComplex, FacilityDetails } from "../types";
 import CreateSportComplexForm from "../components/CreateSportComplexForm";
 import CreateFacilityForm from "../components/CreateFacilityForm";
@@ -18,13 +15,11 @@ export default function BecomeManager() {
 
     useEffect(() => {
         fetchData();
-    }, []);
-
-    const fetchData = async () => {
+    }, []);    const fetchData = async () => {
         try {
             const [complexes, facilities] = await Promise.all([
-                getMySportComplexes(),
-                getMyFacilities()
+                sportComplexService.getMy(),
+                facilityService.getMy()
             ]);
 
             setMySportComplexes(complexes || []);

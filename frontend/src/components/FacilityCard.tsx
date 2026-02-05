@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import type { FacilityDetails } from "../types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleCheck } from "@fortawesome/free-solid-svg-icons";
-import { getEntityImages } from "../services/api";
+import { imageService } from "../api";
 import { useAuth } from "../context/AuthContext";
 import "../styles/FacilityCard.css";
 
@@ -16,12 +16,10 @@ const FacilityCard = ({ facility }: FacilityCardProps) => {
     const { user } = useAuth();
     const [primaryImage, setPrimaryImage] = useState<string | null>(null);
 
-    const isOwner = user && facility.manager_id === user.id;
-
-    useEffect(() => {
+    const isOwner = user && facility.manager_id === user.id;    useEffect(() => {
         const fetchImage = async () => {
             try {
-                const images = await getEntityImages('facility', facility.id);
+                const images = await imageService.getEntityImages('facility', facility.id);
                 if (images && images.length > 0) {
                     // Find primary image or use first one
                     const primary = images.find((img: any) => img.is_primary) || images[0];

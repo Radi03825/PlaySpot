@@ -7,17 +7,17 @@ import WorkingHoursPricing from "./WorkingHoursPricing";
 import type { WorkingHours, PricingSlot } from "./WorkingHoursPricing";
 import "../styles/CreateWizard.css";
 
-interface CreateFacilityFormProps {
+interface CreateFacilityWizardProps {
     onSuccess?: (message: string) => void;
     onError?: (message: string) => void;
     onCancel?: () => void;
 }
 
-export default function CreateFacilityForm({
+export default function CreateFacilityWizard({
     onSuccess,
     onError,
     onCancel
-}: CreateFacilityFormProps) {
+}: CreateFacilityWizardProps) {
     const [currentStep, setCurrentStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const imageUploadRef = useRef<ImageUploadRef>(null);

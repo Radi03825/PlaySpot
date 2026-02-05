@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { searchFacilities, getCities, getSurfaces, getEnvironments, getSports } from "../services/api";
+import { facilityService, metadataService } from "../api";
 import type { FacilityDetails } from "../types";
 import FacilityCard from "../components/FacilityCard";
 import "../styles/Facilities.css";
@@ -44,15 +44,13 @@ export default function Facilities() {
     useEffect(() => {
         fetchMetadata();
         fetchFacilities();
-    }, []);
-
-    const fetchMetadata = async () => {
+    }, []);    const fetchMetadata = async () => {
         try {
             const [citiesData, sportsData, surfacesData, environmentsData] = await Promise.all([
-                getCities(),
-                getSports(),
-                getSurfaces(),
-                getEnvironments(),
+                metadataService.getCities(),
+                metadataService.getSports(),
+                metadataService.getSurfaces(),
+                metadataService.getEnvironments(),
             ]);
             setCities(citiesData || []);
             setSports(sportsData || []);
@@ -73,13 +71,12 @@ export default function Facilities() {
             if (selectedSurface) params.surface = selectedSurface;
             if (selectedEnvironment) params.environment = selectedEnvironment;
             if (minCapacity) params.min_capacity = parseInt(minCapacity);
-            if (maxCapacity) params.max_capacity = parseInt(maxCapacity);
-            if (sortBy) {
+            if (maxCapacity) params.max_capacity = parseInt(maxCapacity);            if (sortBy) {
                 params.sort_by = sortBy;
                 params.sort_order = sortOrder;
             }
 
-            const data = await searchFacilities(params);
+            const data = await facilityService.search(params);
             setFacilities(data || []);
         } catch (err: any) {
             setError(err.message || "Failed to load facilities");

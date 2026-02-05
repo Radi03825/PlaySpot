@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getFacilityById, getEntityImages, toggleFacilityStatus } from "../services/api";
+import { facilityService, imageService } from "../api";
 import { useAuth } from "../context/AuthContext";
 import type { FacilityDetails } from "../types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import BookingModal from "../components/BookingModal";
 import ImageModal from "../components/ImageModal";
+import ReviewSection from "../components/ReviewSection";
 import "../styles/FacilityDetails.css";
 import {faCircleCheck} from "@fortawesome/free-solid-svg-icons";
 
@@ -32,13 +33,11 @@ export default function FacilityDetailsPage() {
         let isMounted = true;
 
         const fetchData = async () => {
-            if (!id) return;
-
-            try {
+            if (!id) return;            try {
                 setLoading(true);
                 const [facilityData, imagesData] = await Promise.all([
-                    getFacilityById(parseInt(id)),
-                    getEntityImages('facility', parseInt(id))
+                    facilityService.getById(parseInt(id)),
+                    imageService.getEntityImages('facility', parseInt(id))
                 ]);
 
                 if (isMounted) {
@@ -82,14 +81,12 @@ export default function FacilityDetailsPage() {
         const action = facility.is_active ? 'deactivate' : 'activate';
         if (!window.confirm(`Are you sure you want to ${action} this facility?`)) {
             return;
-        }
-
-        try {
+        }        try {
             setTogglingStatus(true);
-            await toggleFacilityStatus(facility.id, !facility.is_active);
+            await facilityService.toggleStatus(facility.id, !facility.is_active);
             
             // Refresh facility data
-            const facilityData = await getFacilityById(parseInt(id!));
+            const facilityData = await facilityService.getById(parseInt(id!));
             setFacility(facilityData);
             setError("");
         } catch (err: unknown) {
@@ -291,6 +288,9 @@ export default function FacilityDetailsPage() {
                     )}
                 </div>
             </div>
+
+            {/* Reviews Section */}
+            <ReviewSection facilityId={facility.id} />
 
             {showBookingModal && facility && (
                 <BookingModal

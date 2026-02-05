@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getSportComplexById, getFacilitiesByComplexId, getEntityImages, toggleComplexStatus } from "../services/api";
+import { sportComplexService, imageService } from "../api";
 import { useAuth } from "../context/AuthContext";
 import type { SportComplex, FacilityDetails } from "../types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -34,12 +34,10 @@ export default function SportComplexDetails() {
 
             try {
                 setLoading(true);
-                const complexId = parseInt(id);
-
-                const [complexData, facilitiesData, imagesData] = await Promise.all([
-                    getSportComplexById(complexId),
-                    getFacilitiesByComplexId(complexId),
-                    getEntityImages('sport_complex', complexId)
+                const complexId = parseInt(id);                const [complexData, facilitiesData, imagesData] = await Promise.all([
+                    sportComplexService.getById(complexId),
+                    sportComplexService.getFacilities(complexId),
+                    imageService.getEntityImages('sport_complex', complexId)
                 ]);
 
                 if (isMounted) {
@@ -73,14 +71,12 @@ export default function SportComplexDetails() {
         const action = complex.is_active ? 'deactivate' : 'activate';
         if (!window.confirm(`Are you sure you want to ${action} this sport complex?`)) {
             return;
-        }
-
-        try {
+        }        try {
             setTogglingStatus(true);
-            await toggleComplexStatus(complex.id, !complex.is_active);
+            await sportComplexService.toggleStatus(complex.id, !complex.is_active);
             
             // Refresh complex data
-            const complexData = await getSportComplexById(parseInt(id!));
+            const complexData = await sportComplexService.getById(parseInt(id!));
             setComplex(complexData);
             setError("");
         } catch (err: unknown) {

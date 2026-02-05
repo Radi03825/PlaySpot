@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { forgotPassword } from "../services/api";
+import { authService } from "../api";
 import "../styles/Auth.css";
 
 export default function ForgotPassword() {
@@ -13,15 +13,9 @@ export default function ForgotPassword() {
         e.preventDefault();
         setError("");
         setMessage("");
-        setLoading(true);
-
-        try {
-            const response = await forgotPassword(email);
+        setLoading(true);        try {
+            await authService.forgotPassword({ email });
             setMessage("Password reset instructions have been sent to your email.");
-            // If token is returned (for development), you could display it
-            if (response.token) {
-                console.log("Reset token:", response.token);
-            }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to request password reset");
         } finally {

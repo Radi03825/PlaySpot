@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Event, EventParticipant } from '../types';
-import { getEventById, joinEvent, leaveEvent, deleteEvent, getEventParticipants } from '../services/api';
+import { eventService } from '../api';
 import { useAuth } from '../context/AuthContext';
 import '../styles/EventDetails.css';
 
@@ -20,12 +20,10 @@ export default function EventDetails() {
             fetchEventDetails();
             fetchParticipants();
         }
-    }, [id]);
-
-    const fetchEventDetails = async () => {
+    }, [id]);    const fetchEventDetails = async () => {
         try {
             setLoading(true);
-            const data = await getEventById(Number(id));
+            const data = await eventService.getById(Number(id));
             setEvent(data);
             setError(null);
         } catch (err: any) {
@@ -37,7 +35,7 @@ export default function EventDetails() {
 
     const fetchParticipants = async () => {
         try {
-            const data = await getEventParticipants(Number(id));
+            const data = await eventService.getParticipants(Number(id));
             setParticipants(data || []);
         } catch (err) {
             console.error('Failed to fetch participants:', err);
@@ -52,7 +50,7 @@ export default function EventDetails() {
 
         try {
             setActionLoading(true);
-            await joinEvent(Number(id));
+            await eventService.join(Number(id));
             await fetchEventDetails();
             await fetchParticipants();
             setError(null);
@@ -66,7 +64,7 @@ export default function EventDetails() {
     const handleLeaveEvent = async () => {
         try {
             setActionLoading(true);
-            await leaveEvent(Number(id));
+            await eventService.leave(Number(id));
             await fetchEventDetails();
             await fetchParticipants();
             setError(null);
@@ -88,7 +86,7 @@ export default function EventDetails() {
 
         try {
             setActionLoading(true);
-            await deleteEvent(Number(id));
+            await eventService.delete(Number(id));
             navigate('/events');
         } catch (err: any) {
             setError(err.message || 'Failed to delete event');
