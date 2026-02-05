@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.FacilityHandler, sportComplexHandler *handler.SportComplexHandler, reservationHandler *handler.ReservationHandler, imageHandler *handler.ImageHandler, paymentHandler *handler.PaymentHandler, eventHandler *handler.EventHandler) *mux.Router {
+func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.FacilityHandler, sportComplexHandler *handler.SportComplexHandler, reservationHandler *handler.ReservationHandler, imageHandler *handler.ImageHandler, paymentHandler *handler.PaymentHandler, eventHandler *handler.EventHandler, reviewHandler *handler.ReviewHandler) *mux.Router {
 	router := mux.NewRouter()
 	api := router.PathPrefix("/api").Subrouter()
 
@@ -44,6 +44,10 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	api.HandleFunc("/events", eventHandler.GetAllEvents).Methods("GET")
 	api.HandleFunc("/events/{id:[0-9]+}", eventHandler.GetEventByID).Methods("GET")
 	api.HandleFunc("/events/{id:[0-9]+}/participants", eventHandler.GetEventParticipants).Methods("GET")
+
+	// Public review routes (viewing reviews)
+	api.HandleFunc("/facilities/{id:[0-9]+}/reviews", reviewHandler.GetReviewsByFacility).Methods("GET")
+	api.HandleFunc("/facilities/{id:[0-9]+}/reviews/stats", reviewHandler.GetFacilityReviewStats).Methods("GET")
 
 	// Protected routes (require authentication)
 	protected := api.PathPrefix("").Subrouter()
@@ -84,6 +88,13 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	protected.HandleFunc("/events/{id:[0-9]+}/leave", eventHandler.LeaveEvent).Methods("POST")
 	protected.HandleFunc("/users/me/events", eventHandler.GetUserEvents).Methods("GET")
 	protected.HandleFunc("/users/me/events/joined", eventHandler.GetUserJoinedEvents).Methods("GET")
+
+	// Review routes (authenticated users)
+	protected.HandleFunc("/reviews", reviewHandler.CreateReview).Methods("POST")
+	protected.HandleFunc("/reviews/{id:[0-9]+}", reviewHandler.UpdateReview).Methods("PUT")
+	protected.HandleFunc("/reviews/{id:[0-9]+}", reviewHandler.DeleteReview).Methods("DELETE")
+	protected.HandleFunc("/facilities/{id:[0-9]+}/reviews/my", reviewHandler.GetUserReviewForFacility).Methods("GET")
+	protected.HandleFunc("/facilities/{id:[0-9]+}/can-review", reviewHandler.CanUserReview).Methods("GET")
 
 	// Admin routes - manage all pending items
 	adminRoutes := protected.PathPrefix("/admin").Subrouter()

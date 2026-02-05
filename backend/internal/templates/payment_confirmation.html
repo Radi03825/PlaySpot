@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Confirmed - PlaySpot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #4CAF50;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .success-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 24px;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .booking-details {
+            background-color: #f8f9fa;
+            border-left: 4px solid #4CAF50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #555;
+        }
+        .detail-value {
+            color: #333;
+            text-align: right;
+        }
+        .amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 5px;
+        }
+        .info-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .info-box p {
+            margin: 5px 0;
+            color: #856404;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 14px;
+            color: #888;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        @media only screen and (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 20px;
+            }
+            .detail-row {
+                flex-direction: column;
+            }
+            .detail-value {
+                text-align: left;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">PlaySpot</div>
+            <h1>Payment Confirmed!</h1>
+        </div>        <div class="greeting">
+            <p>Hi {{.UserName}},</p>
+            {{if eq .PaymentMethod "On Place"}}
+            <p>Your booking has been confirmed! Please complete your payment when you arrive at the facility.</p>
+            {{else}}
+            <p>Great news! Your payment has been successfully processed and your booking is now confirmed.</p>
+            {{end}}
+        </div>
+
+        <div class="amount">
+            €{{.Amount}}
+        </div>
+
+        <div class="booking-details">
+            <h2 style="margin-top: 0; color: #2c3e50; font-size: 18px;">📅 Booking Details</h2>
+            
+            <div class="detail-row">
+                <span class="detail-label">Facility:</span>
+                <span class="detail-value">{{.FacilityName}}</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Sport:</span>
+                <span class="detail-value">{{.SportName}}</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Category:</span>
+                <span class="detail-value">{{.CategoryName}}</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Address:</span>
+                <span class="detail-value">{{.Address}}, {{.City}}</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Date:</span>
+                <span class="detail-value">{{.Date}}</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Time:</span>
+                <span class="detail-value">{{.StartTimeOnly}} - {{.EndTime}}</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Payment Method:</span>
+                <span class="detail-value">{{.PaymentMethod}}</span>
+            </div>
+        </div>        <div class="info-box">
+            <p><strong>📌 Important Information:</strong></p>
+            <p>• Please arrive 10 minutes before your scheduled time</p>
+            <p>• Bring your confirmation email or booking ID</p>
+            {{if eq .PaymentMethod "On Place"}}
+            <p><strong>• Payment Required: Please bring €{{.Amount}} to pay at the facility</strong></p>
+            {{else}}
+            <p>• Payment already completed - just show up and play!</p>
+            {{end}}
+            <p>• Check your calendar - we've added this event for you!</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <p style="color: #666;">Need to make changes? Log in to your PlaySpot account to manage your bookings.</p>
+        </div>
+
+        <div class="footer">
+            <p>Thank you for choosing PlaySpot!</p>
+            <p>If you have any questions, please don't hesitate to contact us.</p>
+            <p>&copy; 2026 PlaySpot. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

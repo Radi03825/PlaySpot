@@ -222,3 +222,16 @@ CREATE TABLE IF NOT EXISTS event_participants (
 CREATE INDEX IF NOT EXISTS idx_event_participants_event_id ON event_participants(event_id);
 CREATE INDEX IF NOT EXISTS idx_event_participants_user_id ON event_participants(user_id);
 CREATE INDEX IF NOT EXISTS idx_event_participants_status ON event_participants(status);
+
+-- 17. CREATE REVIEWS TABLE
+CREATE TABLE IF NOT EXISTS reviews (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    facility_id BIGINT NOT NULL REFERENCES facilities(id) ON DELETE CASCADE,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    title VARCHAR(255),
+    comment TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT unique_user_facility_review UNIQUE (user_id, facility_id)
+);

@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/Radi03825/PlaySpot/internal/dto"
@@ -207,68 +208,71 @@ func (s *ReservationService) CreateReservation(userID int64, req dto.CreateReser
 	return reservation, nil
 }
 
-// createCalendarEventForReservation creates a Google Calendar event for a reservation
+// createCalendarEventForReservation creates a Google Calendar event for a reservation asynchronously
 func (s *ReservationService) createCalendarEventForReservation(reservation *model.FacilityReservation) {
-	// Get Google tokens (regardless of whether user has Google auth identity)
-	accessToken, refreshToken, tokenExpiry, err := s.userService.GetGoogleTokens(reservation.UserID)
-	if err != nil {
-		// Error getting tokens, skip calendar event
-		fmt.Printf("No Google tokens for user %d: %v\n", reservation.UserID, err)
-		return
-	}
+	// Run calendar event creation in a goroutine to avoid blocking
+	go func() {
+		// Get Google tokens (regardless of whether user has Google auth identity)
+		accessToken, refreshToken, tokenExpiry, err := s.userService.GetGoogleTokens(reservation.UserID)
+		if err != nil {
+			// Error getting tokens, skip calendar event
+			log.Printf("[CALENDAR] No Google tokens for user %d: %v", reservation.UserID, err)
+			return
+		}
 
-	if accessToken == "" || refreshToken == "" {
-		// No valid tokens, user hasn't connected calendar
-		fmt.Printf("User %d has no calendar tokens\n", reservation.UserID)
-		return
-	}
+		if accessToken == "" || refreshToken == "" {
+			// No valid tokens, user hasn't connected calendar
+			log.Printf("[CALENDAR] User %d has no calendar tokens", reservation.UserID)
+			return
+		}
 
-	fmt.Printf("Creating calendar event for user %d, reservation %d\n", reservation.UserID, reservation.ID)
+		log.Printf("[CALENDAR] Creating calendar event for user %d, reservation %d", reservation.UserID, reservation.ID)
 
-	// Get facility details
-	facility, err := s.facilityService.GetFacilityDetailsByID(reservation.FacilityID)
-	if err != nil {
-		// Failed to get facility, skip calendar event
-		fmt.Printf("Failed to get facility %d: %v\n", reservation.FacilityID, err)
-		return
-	}
+		// Get facility details
+		facility, err := s.facilityService.GetFacilityDetailsByID(reservation.FacilityID)
+		if err != nil {
+			// Failed to get facility, skip calendar event
+			log.Printf("[CALENDAR] Failed to get facility %d: %v", reservation.FacilityID, err)
+			return
+		}
 
-	// Create calendar event
-	description := fmt.Sprintf(
-		"Facility: %s\nCategory: %s\nSport: %s\nPrice: €%.2f",
-		facility.Name,
-		facility.CategoryName,
-		facility.SportName,
-		reservation.TotalPrice,
-	)
+		// Create calendar event
+		description := fmt.Sprintf(
+			"Facility: %s\nCategory: %s\nSport: %s\nPrice: €%.2f",
+			facility.Name,
+			facility.CategoryName,
+			facility.SportName,
+			reservation.TotalPrice,
+		)
 
-	// Combine address and city for location
-	location := fmt.Sprintf("%s, %s", facility.Address, facility.City)
+		// Combine address and city for location
+		location := fmt.Sprintf("%s, %s", facility.Address, facility.City)
 
-	eventID, err := s.googleCalendarService.CreateEvent(
-		accessToken,
-		refreshToken,
-		tokenExpiry,
-		facility.Name,
-		description,
-		location,
-		reservation.StartTime,
-		reservation.EndTime,
-	)
+		eventID, err := s.googleCalendarService.CreateEvent(
+			accessToken,
+			refreshToken,
+			tokenExpiry,
+			facility.Name,
+			description,
+			location,
+			reservation.StartTime,
+			reservation.EndTime,
+		)
 
-	if err != nil {
-		// Failed to create calendar event, but don't fail the reservation
-		fmt.Printf("Failed to create calendar event for reservation %d: %v\n", reservation.ID, err)
-		return
-	}
+		if err != nil {
+			// Failed to create calendar event, but don't fail the reservation
+			log.Printf("[CALENDAR] Failed to create calendar event for reservation %d: %v", reservation.ID, err)
+			return
+		}
 
-	fmt.Printf("Calendar event created with ID: %s for reservation %d\n", eventID, reservation.ID)
+		log.Printf("[CALENDAR] Calendar event created with ID: %s for reservation %d", eventID, reservation.ID)
 
-	// Update reservation with calendar event ID
-	updateErr := s.repo.UpdateReservationCalendarEventID(reservation.ID, eventID)
-	if updateErr != nil {
-		fmt.Printf("Failed to update reservation with calendar event ID: %v\n", updateErr)
-	}
+		// Update reservation with calendar event ID
+		updateErr := s.repo.UpdateReservationCalendarEventID(reservation.ID, eventID)
+		if updateErr != nil {
+			log.Printf("[CALENDAR] Failed to update reservation with calendar event ID: %v", updateErr)
+		}
+	}()
 }
 
 // calculatePrice calculates the total price for a reservation
@@ -324,27 +328,37 @@ func (s *ReservationService) CancelReservation(reservationID, userID int64) erro
 	return nil
 }
 
-// deleteCalendarEventForReservation deletes a Google Calendar event for a reservation
+// deleteCalendarEventForReservation deletes a Google Calendar event for a reservation asynchronously
 func (s *ReservationService) deleteCalendarEventForReservation(reservation *model.FacilityReservation) {
-	// Check if user has Google auth
-	hasGoogle, err := s.userService.HasAuthIdentity(reservation.UserID, "google")
-	if err != nil || !hasGoogle {
-		return
-	}
+	// Run calendar event deletion in a goroutine to avoid blocking
+	go func() {
+		// Check if user has Google auth
+		hasGoogle, err := s.userService.HasAuthIdentity(reservation.UserID, "google")
+		if err != nil || !hasGoogle {
+			log.Printf("[CALENDAR] User %d does not have Google auth", reservation.UserID)
+			return
+		}
 
-	// Get Google tokens
-	accessToken, refreshToken, tokenExpiry, err := s.userService.GetGoogleTokens(reservation.UserID)
-	if err != nil || accessToken == "" {
-		return
-	}
+		// Get Google tokens
+		accessToken, refreshToken, tokenExpiry, err := s.userService.GetGoogleTokens(reservation.UserID)
+		if err != nil || accessToken == "" {
+			log.Printf("[CALENDAR] Failed to get Google tokens for user %d: %v", reservation.UserID, err)
+			return
+		}
 
-	// Delete calendar event
-	_ = s.googleCalendarService.DeleteEvent(
-		accessToken,
-		refreshToken,
-		tokenExpiry,
-		*reservation.GoogleCalendarEventID,
-	)
+		// Delete calendar event
+		err = s.googleCalendarService.DeleteEvent(
+			accessToken,
+			refreshToken,
+			tokenExpiry,
+			*reservation.GoogleCalendarEventID,
+		)
+		if err != nil {
+			log.Printf("[CALENDAR] Failed to delete calendar event %s: %v", *reservation.GoogleCalendarEventID, err)
+		} else {
+			log.Printf("[CALENDAR] Successfully deleted calendar event %s", *reservation.GoogleCalendarEventID)
+		}
+	}()
 }
 
 // parseTimeOfDay parses a time string in "HH:MM:SS" or "HH:MM" format to time.Time

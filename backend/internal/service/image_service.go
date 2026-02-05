@@ -3,6 +3,7 @@ package service
 import (
 	"io"
 	"mime/multipart"
+	"sync"
 
 	"github.com/Radi03825/PlaySpot/internal/model"
 	"github.com/Radi03825/PlaySpot/internal/repository"
@@ -41,30 +42,76 @@ func (s *ImageService) UploadMultipartImage(file multipart.File, header *multipa
 	return result.URL, nil
 }
 
-// UploadMultipleImages uploads multiple multipart images
+// UploadMultipleImages uploads multiple multipart images concurrently
 func (s *ImageService) UploadMultipleImages(files []*multipart.FileHeader, folder string) (urls []string, errors []string) {
-	urls = make([]string, 0, len(files))
-	errors = make([]string, 0)
-
-	for _, fileHeader := range files {
-		file, err := fileHeader.Open()
-		if err != nil {
-			errors = append(errors, "Failed to open file: "+fileHeader.Filename)
-			continue
-		}
-
-		url, err := s.UploadMultipartImage(file, fileHeader, folder)
-		file.Close()
-
-		if err != nil {
-			errors = append(errors, "Failed to upload "+fileHeader.Filename+": "+err.Error())
-			continue
-		}
-
-		urls = append(urls, url)
+	type uploadResult struct {
+		url   string
+		err   string
+		index int
 	}
 
-	return urls, errors
+	results := make(chan uploadResult, len(files))
+	var wg sync.WaitGroup
+
+	// Upload files concurrently
+	for i, fileHeader := range files {
+		wg.Add(1)
+		go func(index int, header *multipart.FileHeader) {
+			defer wg.Done()
+
+			file, err := header.Open()
+			if err != nil {
+				results <- uploadResult{
+					err:   "Failed to open file: " + header.Filename,
+					index: index,
+				}
+				return
+			}
+			defer file.Close()
+
+			url, err := s.UploadMultipartImage(file, header, folder)
+			if err != nil {
+				results <- uploadResult{
+					err:   "Failed to upload " + header.Filename + ": " + err.Error(),
+					index: index,
+				}
+				return
+			}
+
+			results <- uploadResult{
+				url:   url,
+				index: index,
+			}
+		}(i, fileHeader)
+	}
+
+	// Wait for all uploads to complete
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	// Collect results in order
+	urlMap := make(map[int]string)
+	errorList := make([]string, 0)
+
+	for result := range results {
+		if result.err != "" {
+			errorList = append(errorList, result.err)
+		} else {
+			urlMap[result.index] = result.url
+		}
+	}
+
+	// Build ordered URL list
+	urls = make([]string, 0, len(urlMap))
+	for i := 0; i < len(files); i++ {
+		if url, ok := urlMap[i]; ok {
+			urls = append(urls, url)
+		}
+	}
+
+	return urls, errorList
 }
 
 // DeleteImage deletes an image using its storage ID
@@ -111,31 +158,77 @@ func (s *ImageService) UploadAndSaveImage(file multipart.File, header *multipart
 	return image, nil
 }
 
-// UploadAndSaveMultipleImages uploads multiple images and saves their metadata to the database
+// UploadAndSaveMultipleImages uploads multiple images and saves their metadata to the database concurrently
 func (s *ImageService) UploadAndSaveMultipleImages(files []*multipart.FileHeader, folder, imageType string, referenceID, ownerID int64) ([]model.Image, []string) {
-	images := make([]model.Image, 0, len(files))
-	errors := make([]string, 0)
-
-	for i, fileHeader := range files {
-		file, err := fileHeader.Open()
-		if err != nil {
-			errors = append(errors, "Failed to open file: "+fileHeader.Filename)
-			continue
-		}
-
-		isPrimary := i == 0 // First image is primary
-		image, err := s.UploadAndSaveImage(file, fileHeader, folder, imageType, referenceID, ownerID, isPrimary)
-		file.Close()
-
-		if err != nil {
-			errors = append(errors, "Failed to upload "+fileHeader.Filename+": "+err.Error())
-			continue
-		}
-
-		images = append(images, *image)
+	type uploadResult struct {
+		image *model.Image
+		err   string
+		index int
 	}
 
-	return images, errors
+	results := make(chan uploadResult, len(files))
+	var wg sync.WaitGroup
+
+	// Upload and save files concurrently
+	for i, fileHeader := range files {
+		wg.Add(1)
+		go func(index int, header *multipart.FileHeader) {
+			defer wg.Done()
+
+			file, err := header.Open()
+			if err != nil {
+				results <- uploadResult{
+					err:   "Failed to open file: " + header.Filename,
+					index: index,
+				}
+				return
+			}
+			defer file.Close()
+
+			isPrimary := index == 0 // First image is primary
+			image, err := s.UploadAndSaveImage(file, header, folder, imageType, referenceID, ownerID, isPrimary)
+			if err != nil {
+				results <- uploadResult{
+					err:   "Failed to upload " + header.Filename + ": " + err.Error(),
+					index: index,
+				}
+				return
+			}
+
+			results <- uploadResult{
+				image: image,
+				index: index,
+			}
+		}(i, fileHeader)
+	}
+
+	// Wait for all uploads to complete
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	// Collect results in order
+	imageMap := make(map[int]*model.Image)
+	errorList := make([]string, 0)
+
+	for result := range results {
+		if result.err != "" {
+			errorList = append(errorList, result.err)
+		} else {
+			imageMap[result.index] = result.image
+		}
+	}
+
+	// Build ordered image list
+	images := make([]model.Image, 0, len(imageMap))
+	for i := 0; i < len(files); i++ {
+		if img, ok := imageMap[i]; ok {
+			images = append(images, *img)
+		}
+	}
+
+	return images, errorList
 }
 
 // CreateImagesFromURLs creates image records from pre-existing URLs (for legacy or external images)

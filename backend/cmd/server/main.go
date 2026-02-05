@@ -42,6 +42,7 @@ func main() {
 	imageRepo := repository.NewImageRepository(db)
 	paymentRepo := repository.NewPaymentRepository(db)
 	eventRepo := repository.NewEventRepository(db)
+	reviewRepo := repository.NewReviewRepository(db)
 
 	// Create email service
 	emailService := service.NewEmailService()
@@ -84,6 +85,9 @@ func main() {
 	// Create event service
 	eventService := service.NewEventService(eventRepo)
 
+	// Create review service
+	reviewService := service.NewReviewService(reviewRepo)
+
 	//// Create and start reminder service
 	//reminderService := service.NewReminderService(reservationRepo, userService, facilityService, sportComplexService, emailService)
 	//reminderService.Start()
@@ -96,8 +100,9 @@ func main() {
 	imageHandler := handler.NewImageHandler(imageService)
 	paymentHandler := handler.NewPaymentHandler(paymentService)
 	eventHandler := handler.NewEventHandler(eventService)
+	reviewHandler := handler.NewReviewHandler(reviewService)
 
-	router := http2.NewRouter(userHandler, facilityHandler, sportComplexHandler, reservationHandler, imageHandler, paymentHandler, eventHandler)
+	router := http2.NewRouter(userHandler, facilityHandler, sportComplexHandler, reservationHandler, imageHandler, paymentHandler, eventHandler, reviewHandler)
 
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {

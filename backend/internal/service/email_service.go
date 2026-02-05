@@ -5,9 +5,11 @@ import (
 	"crypto/tls"
 	"fmt"
 	"html/template"
+	"log"
 	"net/smtp"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type EmailService struct {
@@ -58,6 +60,16 @@ func (s *EmailService) SendVerificationEmail(toEmail, userName, verificationToke
 	return s.sendEmail(toEmail, subject, body)
 }
 
+// SendVerificationEmailAsync sends a verification email asynchronously
+func (s *EmailService) SendVerificationEmailAsync(toEmail, userName, verificationToken string) {
+	go func() {
+		err := s.SendVerificationEmail(toEmail, userName, verificationToken)
+		if err != nil {
+			log.Printf("[EMAIL ERROR] Failed to send verification email to %s: %v", toEmail, err)
+		}
+	}()
+}
+
 // SendPasswordResetEmail sends a password reset link to the user
 func (s *EmailService) SendPasswordResetEmail(toEmail, userName, resetToken string) error {
 	baseURL := os.Getenv("FRONTEND_URL")
@@ -79,6 +91,16 @@ func (s *EmailService) SendPasswordResetEmail(toEmail, userName, resetToken stri
 	}
 
 	return s.sendEmail(toEmail, subject, body)
+}
+
+// SendPasswordResetEmailAsync sends a password reset email asynchronously
+func (s *EmailService) SendPasswordResetEmailAsync(toEmail, userName, resetToken string) {
+	go func() {
+		err := s.SendPasswordResetEmail(toEmail, userName, resetToken)
+		if err != nil {
+			log.Printf("[EMAIL ERROR] Failed to send password reset email to %s: %v", toEmail, err)
+		}
+	}()
 }
 
 func (s *EmailService) sendEmail(to, subject, body string) error {
@@ -309,4 +331,45 @@ func (s *EmailService) renderTemplate(templateName string, data map[string]inter
 	}
 
 	return buf.String(), nil
+}
+
+// SendPaymentConfirmationEmail sends a confirmation email after successful payment
+func (s *EmailService) SendPaymentConfirmationEmail(
+	toEmail, userName, facilityName, address, city, categoryName, sportName string,
+	startTime, endTime time.Time,
+	amount float64,
+	paymentMethod string,
+) error {
+	var subject string
+	if paymentMethod == "on_place" {
+		subject = "Booking Confirmed - Payment Due On Arrival"
+	} else {
+		subject = "Payment Confirmed - Your Booking is Complete!"
+	}
+
+	paymentMethodText := "On Place"
+	if paymentMethod == "card" {
+		paymentMethodText = "Card"
+	}
+
+	// Load and render template
+	body, err := s.renderTemplate("payment_confirmation.html", map[string]interface{}{
+		"UserName":      userName,
+		"FacilityName":  facilityName,
+		"Address":       address,
+		"City":          city,
+		"CategoryName":  categoryName,
+		"SportName":     sportName,
+		"StartTime":     startTime.Format("Monday, January 2, 2006 at 3:04 PM"),
+		"EndTime":       endTime.Format("3:04 PM"),
+		"Date":          startTime.Format("Monday, January 2, 2006"),
+		"StartTimeOnly": startTime.Format("3:04 PM"),
+		"Amount":        fmt.Sprintf("%.2f", amount),
+		"PaymentMethod": paymentMethodText,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to render email template: %w", err)
+	}
+
+	return s.sendEmail(toEmail, subject, body)
 }

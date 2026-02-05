@@ -25,7 +25,6 @@ func NewUserService(repo *repository.UserRepository, tokenService *TokenService,
 }
 
 // TODO: Add validation for email format and password strength
-// TODO: Send confirmation email after registration and before activating account
 func (s *UserService) RegisterUser(user dto.RegisterUserDTO) (*model.User, error) {
 	// Check if user already exists
 	existingUser, _ := s.repo.GetUserByEmail(user.Email)
@@ -69,10 +68,10 @@ func (s *UserService) RegisterUser(user dto.RegisterUserDTO) (*model.User, error
 		return nil, err
 	}
 
-	// Generate and send verification email
+	// Generate and send verification email asynchronously
 	verificationToken, err := s.tokenService.GenerateVerificationToken(newUser.ID)
 	if err == nil {
-		s.emailService.SendVerificationEmail(newUser.Email, newUser.Name, verificationToken)
+		s.emailService.SendVerificationEmailAsync(newUser.Email, newUser.Name, verificationToken)
 	}
 
 	return newUser, nil
@@ -170,7 +169,9 @@ func (s *UserService) SendPasswordResetEmail(email string) error {
 		return errors.New("failed to generate reset token")
 	}
 
-	return s.emailService.SendPasswordResetEmail(user.Email, user.Name, resetToken)
+	// Send email asynchronously
+	s.emailService.SendPasswordResetEmailAsync(user.Email, user.Name, resetToken)
+	return nil
 }
 
 func (s *UserService) ResetPassword(token, newPassword string) error {
@@ -215,8 +216,9 @@ func (s *UserService) ResendVerificationEmail(email string) error {
 		return errors.New("failed to generate verification token")
 	}
 
-	// Send verification email
-	return s.emailService.SendVerificationEmail(user.Email, user.Name, verificationToken)
+	// Send verification email asynchronously
+	s.emailService.SendVerificationEmailAsync(user.Email, user.Name, verificationToken)
+	return nil
 }
 
 func (s *UserService) GoogleLogin(googleID, email, name string, userAgent string, googleAccessToken, googleRefreshToken string, tokenExpiry time.Time) (string, string, *model.User, error) {
