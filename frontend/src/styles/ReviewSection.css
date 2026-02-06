@@ -50,12 +50,13 @@
 .stars {
     display: flex;
     gap: 4px;
+    align-items: center;
 }
 
 .star {
-    font-size: 24px;
+    font-size: 20px;
     color: #ddd;
-    transition: color 0.2s;
+    transition: all 0.2s ease;
 }
 
 .star.filled {
@@ -65,10 +66,16 @@
 .star.interactive {
     cursor: pointer;
     font-size: 32px;
+    user-select: none;
 }
 
 .star.interactive:hover {
-    transform: scale(1.1);
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.5));
+}
+
+.star.interactive:active {
+    transform: scale(1.05);
 }
 
 .review-section-loading,

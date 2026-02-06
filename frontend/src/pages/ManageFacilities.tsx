@@ -149,6 +149,12 @@ export default function ManageFacilities() {
                                             >
                                                 View Details
                                             </button>
+                                            <button 
+                                                className="btn-secondary"
+                                                onClick={() => window.location.href = `/facilities/${facility.id}/bookings`}
+                                            >
+                                                View Bookings
+                                            </button>
                                             {/* Statistics button - hidden for now, will be implemented in the future */}
                                             {false && (
                                                 <button 

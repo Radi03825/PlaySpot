@@ -6,4 +6,13 @@ export interface User {
     created_at: string;
     birth_date: string;
     is_email_verified: boolean;
+    is_active: boolean;
+}
+
+export interface PaginatedUsersResponse {
+    users: User[];
+    total_count: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
 }

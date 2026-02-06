@@ -24,6 +24,7 @@ import Events from "./pages/Events";
 import EventDetails from "./pages/EventDetails";
 import CreateEventForm from "./pages/CreateEventForm";
 import EditEventForm from "./pages/EditEventForm";
+import FacilityBookings from "./pages/FacilityBookings";
 
 function App() {
     return (
@@ -128,6 +129,16 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <EditFacility />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Protected facility bookings route */}
+                        <Route
+                            path="/facilities/:id/bookings"
+                            element={
+                                <ProtectedRoute>
+                                    <FacilityBookings />
                                 </ProtectedRoute>
                             }
                         />

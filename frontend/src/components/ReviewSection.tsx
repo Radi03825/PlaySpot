@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { reviewService } from "../api";
 import type { ReviewWithUser, FacilityReviewStats, Review } from "../types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faStar as faStarSolid, faStarHalfStroke } from "@fortawesome/free-solid-svg-icons";
+import { faStar as faStarRegular } from "@fortawesome/free-regular-svg-icons";
 import "../styles/ReviewSection.css";
 
 interface ReviewSectionProps {
@@ -25,6 +28,7 @@ export default function ReviewSection({ facilityId }: ReviewSectionProps) {
     const [title, setTitle] = useState("");
     const [comment, setComment] = useState("");
     const [hoveredRating, setHoveredRating] = useState(0);
+    const [isHalf, setIsHalf] = useState(false);
 
     useEffect(() => {
         fetchReviewData();
@@ -138,21 +142,80 @@ export default function ReviewSection({ facilityId }: ReviewSectionProps) {
         setError("");
     };
 
+    const handleStarHover = (e: React.MouseEvent<SVGSVGElement>, starIndex: number) => {
+        const target = e.currentTarget;
+        const rect = target.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const width = rect.width;
+        const isLeftHalf = x < width / 2;
+        
+        const hoverValue = isLeftHalf ? starIndex - 0.5 : starIndex;
+        setHoveredRating(hoverValue);
+        setIsHalf(isLeftHalf);
+    };
+
+    const handleStarClick = (e: React.MouseEvent<SVGSVGElement>, starIndex: number) => {
+        const target = e.currentTarget;
+        const rect = target.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const width = rect.width;
+        const isLeftHalf = x < width / 2;
+        
+        const newRating = isLeftHalf ? starIndex - 0.5 : starIndex;
+        setRating(newRating);
+    };
+
     const renderStars = (rating: number, interactive: boolean = false) => {
         const stars = [];
+        const displayRating = interactive && hoveredRating > 0 ? hoveredRating : rating;
+        
         for (let i = 1; i <= 5; i++) {
-            const filled = i <= (interactive && hoveredRating > 0 ? hoveredRating : rating);
-            stars.push(
-                <span
-                    key={i}
-                    className={`star ${filled ? 'filled' : ''} ${interactive ? 'interactive' : ''}`}
-                    onClick={interactive ? () => setRating(i) : undefined}
-                    onMouseEnter={interactive ? () => setHoveredRating(i) : undefined}
-                    onMouseLeave={interactive ? () => setHoveredRating(0) : undefined}
-                >
-                    ★
-                </span>
-            );
+            let starIcon;
+            
+            if (interactive) {
+                // For interactive stars, support half stars
+                const difference = displayRating - (i - 1);
+                
+                if (difference >= 1) {
+                    starIcon = faStarSolid;
+                } else if (difference > 0 && difference < 1) {
+                    starIcon = faStarHalfStroke;
+                } else {
+                    starIcon = faStarRegular;
+                }
+                
+                stars.push(
+                    <FontAwesomeIcon
+                        key={i}
+                        icon={starIcon}
+                        className={`star ${difference > 0 ? 'filled' : ''} interactive`}
+                        onClick={(e) => handleStarClick(e, i)}
+                        onMouseMove={(e) => handleStarHover(e, i)}
+                        onMouseLeave={() => setHoveredRating(0)}
+                    />
+                );
+            } else {
+                // For display stars, support half stars
+                const difference = displayRating - (i - 1);
+                
+                if (difference >= 1) {
+                    starIcon = faStarSolid;
+                } else if (difference >= 0.25 && difference < 0.75) {
+                    starIcon = faStarHalfStroke;
+                } else if (difference >= 0.75) {
+                    starIcon = faStarSolid;
+                } else {
+                    starIcon = faStarRegular;
+                }
+                
+                stars.push(
+                    <FontAwesomeIcon
+                        key={i}
+                        icon={starIcon}
+                        className={`star ${difference >= 0.25 ? 'filled' : ''}`}
+                    />
+                );
+            }
         }
         return <div className="stars">{stars}</div>;
     };
@@ -178,7 +241,7 @@ export default function ReviewSection({ facilityId }: ReviewSectionProps) {
                     <div className="review-stats">
                         <div className="average-rating">
                             <span className="rating-number">{stats.average_rating.toFixed(1)}</span>
-                            {renderStars(Math.round(stats.average_rating))}
+                            {renderStars(stats.average_rating)}
                             <span className="total-reviews">({stats.total_reviews} {stats.total_reviews === 1 ? 'review' : 'reviews'})</span>
                         </div>
                     </div>

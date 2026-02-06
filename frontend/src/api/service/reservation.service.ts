@@ -3,6 +3,7 @@ import type {
     Reservation,
     CreateReservationData,
 } from '../types';
+import type {ReservationWithFacility} from "../../types";
 
 export const reservationService = {
     async create(data: CreateReservationData): Promise<{ id: number; message: string }> {
@@ -22,4 +23,16 @@ export const reservationService = {
         const response = await api.post<{ message: string }>(`/reservations/${id}/cancel`);
         return response.data;
     },
+
+    async getFacilityBookings(facilityId: number, startDate?: string, endDate?: string): Promise<ReservationWithFacility[]> {
+        let url = `/facilities/${facilityId}/bookings`;
+        const params = new URLSearchParams();
+        if (startDate) params.append('start_date', startDate);
+        if (endDate) params.append('end_date', endDate);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const response = await api.get<ReservationWithFacility[]>(url);
+        return response.data;
+    },
+
 };

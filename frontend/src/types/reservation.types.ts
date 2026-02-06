@@ -33,3 +33,8 @@ export interface CreateReservationRequest {
     start_time: string;
     end_time: string;
 }
+
+export interface ReservationWithFacility extends Reservation {
+    user_name?: string;
+    user_email?: string;
+}
