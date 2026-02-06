@@ -374,3 +374,8 @@ func parseTimeOfDay(timeStr string) (time.Time, error) {
 	}
 	return t, nil
 }
+
+// GetFacilityBookings retrieves all bookings for a facility within a date range
+func (s *ReservationService) GetFacilityBookings(facilityID int64, startDate, endDate time.Time) ([]dto.ReservationWithFacilityDTO, error) {
+	return s.repo.GetFacilityBookingsWithUserDetails(facilityID, startDate, endDate)
+}

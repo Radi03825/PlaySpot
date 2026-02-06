@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -650,4 +651,126 @@ func verifyGoogleIDToken(idToken string) (*GoogleIDTokenPayload, error) {
 		Email:   email,
 		Name:    name,
 	}, nil
+}
+
+// GetAllUsers retrieves all users (Admin only)
+func (u *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	// Parse query parameters for pagination
+	queryParams := r.URL.Query()
+	page := 1
+	pageSize := 10 // default page size
+
+	// Parse page number
+	if pageStr := queryParams.Get("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	// Parse page size (limit)
+	if pageSizeStr := queryParams.Get("page_size"); pageSizeStr != "" {
+		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 && ps <= 100 {
+			pageSize = ps
+		}
+	}
+
+	// Calculate offset
+	offset := (page - 1) * pageSize
+
+	// Get users with pagination
+	users, totalCount, err := u.service.GetAllUsersWithPagination(pageSize, offset)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to retrieve users"})
+		return
+	}
+
+	// Clear passwords from response
+	for i := range users {
+		users[i].Password = ""
+	}
+
+	// Calculate total pages
+	totalPages := (totalCount + pageSize - 1) / pageSize
+
+	// Create paginated response
+	response := map[string]interface{}{
+		"users":       users,
+		"total_count": totalCount,
+		"page":        page,
+		"page_size":   pageSize,
+		"total_pages": totalPages,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+// ActivateUser activates a deactivated user (Admin only)
+func (u *UserHandler) ActivateUser(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		UserID int64 `json:"user_id"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid request payload"})
+		return
+	}
+
+	err = u.service.ActivateUser(req.UserID)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to activate user"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "User activated successfully",
+	})
+}
+
+// DeactivateUser deactivates a user and all their managed entities (Admin only)
+func (u *UserHandler) DeactivateUser(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		UserID int64 `json:"user_id"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid request payload"})
+		return
+	}
+
+	// Get the authenticated user from context to prevent self-deactivation
+	claims := r.Context().Value(middleware.UserContextKey).(*middleware.UserClaims)
+	if claims.UserID == req.UserID {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Cannot deactivate your own account"})
+		return
+	}
+
+	err = u.service.DeactivateUser(req.UserID)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to deactivate user"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "User deactivated successfully",
+	})
 }

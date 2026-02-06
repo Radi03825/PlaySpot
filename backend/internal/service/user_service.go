@@ -88,6 +88,11 @@ func (s *UserService) LoginUser(loginUser dto.LoginUserDTO, userAgent string) (s
 		return "", "", nil, errors.New("account is not activated, please check your email to activate your account")
 	}
 
+	// Check if user is active
+	if !user.IsActive {
+		return "", "", nil, errors.New("account has been deactivated, please contact support")
+	}
+
 	// Create access token
 	accessToken, err := s.tokenService.CreateAccessToken(user)
 	if err != nil {
@@ -300,6 +305,11 @@ func (s *UserService) GoogleLogin(googleID, email, name string, userAgent string
 		}
 	}
 
+	// Check if user is active
+	if !user.IsActive {
+		return "", "", nil, errors.New("account has been deactivated, please contact support")
+	}
+
 	// Create access token
 	accessToken, err := s.tokenService.CreateAccessToken(user)
 	if err != nil {
@@ -364,4 +374,24 @@ func (s *UserService) GetRoleIDByName(roleName string) (int64, error) {
 // UpdateUserRole updates a user's role
 func (s *UserService) UpdateUserRole(userID int64, roleID int64) error {
 	return s.repo.UpdateUserRole(userID, roleID)
+}
+
+// GetAllUsers retrieves all users
+func (s *UserService) GetAllUsers() ([]model.User, error) {
+	return s.repo.GetAllUsers()
+}
+
+// GetAllUsersWithPagination retrieves users with pagination
+func (s *UserService) GetAllUsersWithPagination(limit, offset int) ([]model.User, int, error) {
+	return s.repo.GetAllUsersWithPagination(limit, offset)
+}
+
+// ActivateUser activates a user
+func (s *UserService) ActivateUser(userID int64) error {
+	return s.repo.ActivateUser(userID)
+}
+
+// DeactivateUser deactivates a user and all their managed complexes and facilities
+func (s *UserService) DeactivateUser(userID int64) error {
+	return s.repo.DeactivateUser(userID)
 }

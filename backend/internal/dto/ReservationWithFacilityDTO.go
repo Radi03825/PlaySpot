@@ -12,6 +12,10 @@ type ReservationWithFacilityDTO struct {
 	TotalPrice float64   `json:"total_price"`
 	CreatedAt  time.Time `json:"created_at"`
 
+	// User details
+	UserName  string `json:"user_name,omitempty"`
+	UserEmail string `json:"user_email,omitempty"`
+
 	// Facility details
 	FacilityName    string  `json:"facility_name"`
 	FacilitySport   string  `json:"facility_sport"`

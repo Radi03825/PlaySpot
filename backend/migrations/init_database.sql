@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS users (
     role_id BIGINT NOT NULL DEFAULT 1 REFERENCES roles(id),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     birth_date TIMESTAMP,
-    is_email_verified BOOLEAN NOT NULL DEFAULT FALSE
+    is_email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS user_auth_identities (

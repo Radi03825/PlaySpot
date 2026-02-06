@@ -365,3 +365,44 @@ func (r *ReservationRepository) GetUpcomingReservations(fromTime, toTime time.Ti
 
 	return reservations, nil
 }
+
+// GetFacilityBookingsWithUserDetails gets reservations for a facility with user information
+func (r *ReservationRepository) GetFacilityBookingsWithUserDetails(facilityID int64, startDate, endDate time.Time) ([]dto.ReservationWithFacilityDTO, error) {
+	query := `
+		SELECT 
+			fr.id, fr.user_id, fr.facility_id, fr.start_time, fr.end_time, 
+			fr.status, fr.total_price, fr.created_at,
+			u.name as user_name, u.email as user_email,
+			f.name as facility_name
+		FROM facility_reservations fr
+		JOIN users u ON fr.user_id = u.id
+		JOIN facilities f ON fr.facility_id = f.id
+		WHERE fr.facility_id = $1 
+		AND fr.start_time >= $2 
+		AND fr.start_time < $3
+		ORDER BY fr.start_time
+	`
+	rows, err := r.db.Query(query, facilityID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var reservations []dto.ReservationWithFacilityDTO
+	for rows.Next() {
+		var reservation dto.ReservationWithFacilityDTO
+		err := rows.Scan(
+			&reservation.ID, &reservation.UserID, &reservation.FacilityID,
+			&reservation.StartTime, &reservation.EndTime, &reservation.Status,
+			&reservation.TotalPrice, &reservation.CreatedAt,
+			&reservation.UserName, &reservation.UserEmail,
+			&reservation.FacilityName,
+		)
+		if err != nil {
+			return nil, err
+		}
+		reservations = append(reservations, reservation)
+	}
+
+	return reservations, nil
+}

@@ -183,3 +183,60 @@ func (h *ReservationHandler) CancelReservation(w http.ResponseWriter, r *http.Re
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "Reservation cancelled successfully"})
 }
+
+// GetFacilityBookings retrieves all bookings for a facility within a date range (Manager/Admin only)
+func (h *ReservationHandler) GetFacilityBookings(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	facilityID, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid facility ID"})
+		return
+	}
+
+	// Parse date range from query parameters
+	startDateStr := r.URL.Query().Get("start_date")
+	endDateStr := r.URL.Query().Get("end_date")
+
+	var startDate, endDate time.Time
+
+	if startDateStr != "" {
+		startDate, err = time.Parse("2006-01-02", startDateStr)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid start_date format. Use YYYY-MM-DD"})
+			return
+		}
+	} else {
+		// Default to first day of current month
+		now := time.Now()
+		startDate = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	}
+
+	if endDateStr != "" {
+		endDate, err = time.Parse("2006-01-02", endDateStr)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid end_date format. Use YYYY-MM-DD"})
+			return
+		}
+	} else {
+		// Default to last day of current month
+		startDate = time.Date(startDate.Year(), startDate.Month(), 1, 0, 0, 0, 0, startDate.Location())
+		endDate = startDate.AddDate(0, 1, 0)
+	}
+
+	bookings, err := h.service.GetFacilityBookings(facilityID, startDate, endDate)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(bookings)
+}

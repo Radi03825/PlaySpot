@@ -13,4 +13,5 @@ type User struct {
 	CreatedAt       time.Time `json:"created_at"`
 	BirthDate       time.Time `json:"birth_date"`
 	IsEmailVerified bool      `json:"is_email_verified"`
+	IsActive        bool      `json:"is_active"`
 }

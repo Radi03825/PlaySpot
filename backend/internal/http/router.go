@@ -70,6 +70,8 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	protected.HandleFunc("/sport-complexes", sportComplexHandler.CreateSportComplex).Methods("POST")
 	protected.HandleFunc("/facilities", facilityHandler.CreateFacility).Methods("POST")
 	protected.HandleFunc("/facilities/{id:[0-9]+}", facilityHandler.UpdateFacility).Methods("PUT")
+	protected.HandleFunc("/facilities/{id:[0-9]+}/bookings", reservationHandler.GetFacilityBookings).Methods("GET")
+	
 	// Reservation routes (authenticated users)
 	protected.HandleFunc("/reservations", reservationHandler.CreateReservation).Methods("POST")
 	protected.HandleFunc("/reservations/user", reservationHandler.GetUserReservations).Methods("GET")
@@ -105,6 +107,9 @@ func NewRouter(userHandler *handler.UserHandler, facilityHandler *handler.Facili
 	adminRoutes.HandleFunc("/sport-complexes/pending", sportComplexHandler.GetPendingComplexes).Methods("GET")
 	adminRoutes.HandleFunc("/sport-complexes/{id}/verify", sportComplexHandler.VerifyComplex).Methods("POST")
 	adminRoutes.HandleFunc("/sport-complexes/{id}/toggle-status", sportComplexHandler.ToggleComplexStatus).Methods("POST")
+	adminRoutes.HandleFunc("/users", userHandler.GetAllUsers).Methods("GET")
+	adminRoutes.HandleFunc("/users/activate", userHandler.ActivateUser).Methods("POST")
+	adminRoutes.HandleFunc("/users/deactivate", userHandler.DeactivateUser).Methods("POST")
 
 	return router
 }

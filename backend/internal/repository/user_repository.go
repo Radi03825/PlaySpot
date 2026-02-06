@@ -32,7 +32,7 @@ func (r *UserRepository) CreateUser(user *model.User) error {
 }
 
 func (r *UserRepository) GetUserByEmail(email string) (*model.User, error) {
-	query := `SELECT id, name, email, COALESCE(password, ''), role_id, created_at, birth_date, is_email_verified
+	query := `SELECT id, name, email, COALESCE(password, ''), role_id, created_at, birth_date, is_email_verified, is_active
 	          FROM users
 	          WHERE email = $1`
 
@@ -48,6 +48,7 @@ func (r *UserRepository) GetUserByEmail(email string) (*model.User, error) {
 		&user.CreatedAt,
 		&user.BirthDate,
 		&user.IsEmailVerified,
+		&user.IsActive,
 	)
 	if err != nil {
 		return nil, err
@@ -57,7 +58,7 @@ func (r *UserRepository) GetUserByEmail(email string) (*model.User, error) {
 }
 
 func (r *UserRepository) GetUserByID(id int64) (*model.User, error) {
-	query := `SELECT id, name, email, COALESCE(password, ''), role_id, created_at, birth_date, is_email_verified
+	query := `SELECT id, name, email, COALESCE(password, ''), role_id, created_at, birth_date, is_email_verified, is_active
 	          FROM users
 	          WHERE id = $1`
 
@@ -73,6 +74,7 @@ func (r *UserRepository) GetUserByID(id int64) (*model.User, error) {
 		&user.CreatedAt,
 		&user.BirthDate,
 		&user.IsEmailVerified,
+		&user.IsActive,
 	)
 	if err != nil {
 		return nil, err
@@ -82,7 +84,7 @@ func (r *UserRepository) GetUserByID(id int64) (*model.User, error) {
 }
 
 func (r *UserRepository) GetUserByAuthProvider(provider, providerUserID string) (*model.User, error) {
-	query := `SELECT u.id, u.name, u.email, COALESCE(u.password, ''), u.role_id, u.created_at, u.birth_date, u.is_email_verified
+	query := `SELECT u.id, u.name, u.email, COALESCE(u.password, ''), u.role_id, u.created_at, u.birth_date, u.is_email_verified, u.is_active
 	          FROM users u
 	          INNER JOIN user_auth_identities uai ON u.id = uai.user_id
 	          WHERE uai.provider = $1 AND uai.provider_user_id = $2`
@@ -99,6 +101,7 @@ func (r *UserRepository) GetUserByAuthProvider(provider, providerUserID string) 
 		&user.CreatedAt,
 		&user.BirthDate,
 		&user.IsEmailVerified,
+		&user.IsActive,
 	)
 	if err != nil {
 		return nil, err
@@ -294,3 +297,125 @@ func (r *UserRepository) HasAuthIdentity(userID int64, provider string) (bool, e
 	err := r.db.QueryRow(query, userID, provider).Scan(&exists)
 	return exists, err
 }
+
+// GetAllUsers retrieves all users from the database
+func (r *UserRepository) GetAllUsers() ([]model.User, error) {
+	query := `SELECT id, name, email, COALESCE(password, ''), role_id, created_at, birth_date, is_email_verified, is_active
+	          FROM users
+	          ORDER BY created_at DESC`
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []model.User
+	for rows.Next() {
+		var user model.User
+		err := rows.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Email,
+			&user.Password,
+			&user.RoleID,
+			&user.CreatedAt,
+			&user.BirthDate,
+			&user.IsEmailVerified,
+			&user.IsActive,
+		)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
+}
+
+// GetAllUsersWithPagination retrieves users with pagination support
+func (r *UserRepository) GetAllUsersWithPagination(limit, offset int) ([]model.User, int, error) {
+	// Get total count
+	var totalCount int
+	countQuery := `SELECT COUNT(*) FROM users`
+	err := r.db.QueryRow(countQuery).Scan(&totalCount)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated users
+	query := `SELECT id, name, email, COALESCE(password, ''), role_id, created_at, birth_date, is_email_verified, is_active
+	          FROM users
+	          ORDER BY created_at DESC
+	          LIMIT $1 OFFSET $2`
+
+	rows, err := r.db.Query(query, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var users []model.User
+	for rows.Next() {
+		var user model.User
+		err := rows.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Email,
+			&user.Password,
+			&user.RoleID,
+			&user.CreatedAt,
+			&user.BirthDate,
+			&user.IsEmailVerified,
+			&user.IsActive,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		users = append(users, user)
+	}
+
+	return users, totalCount, nil
+}
+
+// ActivateUser sets is_active to true for a user
+func (r *UserRepository) ActivateUser(userID int64) error {
+	query := `UPDATE users SET is_active = TRUE WHERE id = $1`
+	_, err := r.db.Exec(query, userID)
+	return err
+}
+
+// DeactivateUser sets is_active to false for a user and deactivates all their managed complexes and facilities
+func (r *UserRepository) DeactivateUser(userID int64) error {
+	// Start a transaction
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Deactivate the user
+	userQuery := `UPDATE users SET is_active = FALSE WHERE id = $1`
+	_, err = tx.Exec(userQuery, userID)
+	if err != nil {
+		return err
+	}
+
+	// Deactivate all sport complexes managed by this user
+	complexQuery := `UPDATE sport_complexes SET is_active = FALSE WHERE manager_id = $1`
+	_, err = tx.Exec(complexQuery, userID)
+	if err != nil {
+		return err
+	}
+
+	// Deactivate all facilities managed by this user
+	facilityQuery := `UPDATE facilities SET is_active = FALSE WHERE manager_id = $1`
+	_, err = tx.Exec(facilityQuery, userID)
+	if err != nil {
+		return err
+	}
+
+	// Commit the transaction
+	return tx.Commit()
+}
+
